@@ -1,5 +1,3 @@
-from itertools import combinations
-
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,11 +7,53 @@ from lifelines import KaplanMeierFitter
 from lifelines.plotting import add_at_risk_counts
 from lifelines.statistics import logrank_test
 from matplotlib.lines import Line2D
-from statannotations.Annotator import Annotator
 
 
-def plot_metrics(results, metrics, models, title=None, ylim=None, y_text=None, plot_all=True, ax=None,
-                 pvals=None, pairs=None):
+def plot_metrics(results, metrics, models=None, annotations=None, title=None, ylim=None, y_text=None, ax=None):
+    """
+    Plot the results of the repeated cross-validation experiments for different models with a barplot.
+
+    Parameters
+    ----------
+    results: pandas DataFrame of shape (n_metrics * n_repeats, n_models+1)
+        Dataframe containing the different metrics estimated for every cross-validation repeat.
+
+            metric   | model 1 | ... | model_k |
+        0 | AUC      |  0.7    | ... | 0.65    |
+        1 | accuracy |  0.63   | ... | O.59    |
+        2 | AUC      |  0.71   | ... | 0.69    |
+        3 | accuracy |  0.61   | ... | O.64    |
+           .................................
+
+    metrics: str, list of str
+        Metrics to plot. If metrics is a list the different metrics will be plotted side by side for each model.
+
+    models: list of str, None.
+        List of model names to plot. If None all the models are displayed. The default is None.
+
+    annotations: dict, None.
+        Dictionnary containing annotations to add to subgroups of models/bars. If None, no annotation is added.
+        annotations = {"annotation": (index of first bar, index of last bar), ...}. The default is None.
+
+        {"1 modality": (0, 3), "2 modalities": (4, 9), "3 modalities": (10, 13), "4 modalities": (14, 14)}
+
+    title: str, None.
+        Title of the plot. If None, no title is displayed. The default is None.
+
+    ylim: Tuple of float > 0, None.
+        Bottom and top ylim. If None, it is set to (0.5, 1). The default is None.
+
+    y_text: float > 0, None
+        y position of the annotation. If None, it is set to 0.85. Ignored if annotations is None. The default is None.
+
+    ax : matplotlib.axes, None
+            The default is None.
+
+    Returns
+    -------
+    matplotlib.pyplot.figure
+
+    """
     results = results.copy()[["metric"] + models]
 
     if ax is None:
@@ -52,24 +92,11 @@ def plot_metrics(results, metrics, models, title=None, ylim=None, y_text=None, p
     if y_text is None:
         y_text = 0.85
 
-    if plot_all:
-        ax.vlines(3.5, 0, 1, colors='k', linestyles='--')
-        ax.text(1.5, y_text, "1 modality", weight='bold', va='bottom', ha='center', fontsize=12)
-        ax.vlines(9.5, 0, 1, colors='k', linestyles='--')
-        ax.text(6.5, y_text, "2 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
-        ax.vlines(13.5, 0, 1, colors='k', linestyles='--')
-        ax.text(11.5, y_text, "3 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
-        # ax.vlines(22.5, 0.45, 1, colors = 'k', linestyles='--')
-        ax.text(14.5, y_text, "4 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
-    else:
-        ax.vlines(0.5, 0, 1, colors='k', linestyles='--')
-        ax.text(0, y_text, "1 modality", weight='bold', va='bottom', ha='center', fontsize=12)
-        ax.vlines(3.5, 0, 1, colors='k', linestyles='--')
-        ax.text(2, y_text, "2 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
-        ax.vlines(6.5, 0, 1, colors='k', linestyles='--')
-        ax.text(5, y_text, "3 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
-        # ax.vlines(, 0.45, 1, colors = 'k', linestyles='--')
-        ax.text(7, y_text, "4 modalities", weight='bold', va='bottom', ha='center', fontsize=12)
+    if annotations is not None:
+        for annot, element in annotations.items():
+            ax.text(element[0] + 0.5*(element[1] - element[0]), y_text, annot, weight='bold', va='bottom', ha='center',
+                    fontsize=12)
+            ax.vlines(element[1]+0.5, 0, 1, colors='k', linestyles='--')
 
     ax.tick_params(axis='y', labelsize=14)
     ax.tick_params(axis='x', labelsize=14)
@@ -77,7 +104,7 @@ def plot_metrics(results, metrics, models, title=None, ylim=None, y_text=None, p
     if ylim is not None:
         ax.set_ylim(ylim[0], ylim[1])
     else:
-        ax.set_ylim(0.5, 0.87)
+        ax.set_ylim(0.5, 1.)
 
     if title is not None:
         ax.set_title(title, fontsize=14)
@@ -87,99 +114,88 @@ def plot_metrics(results, metrics, models, title=None, ylim=None, y_text=None, p
     ax.set(xlabel=None, ylabel=None)
     sns.despine()
 
-    if pvals is not None:
-        if pairs == "significant":
-            l_pairs, pvalues = [], []
-            comb = combinations(models, 2)
-            for pair in comb:
-                p = pvals.loc[pair[0], pair[1]]
-                if p <= 0.05:
-                    pvalues.append(p)
-                    l_pairs.append(pair)
-        elif pairs == "all":
-            l_pairs, pvalues = [], []
-            comb = combinations(models, 2)
-            for pair in comb:
-                p = pvals.loc[pair[0], pair[1]]
-                pvalues.append(p)
-                l_pairs.append(pair)
-        else:
-            l_pairs, pvalues = [], []
-            for pair in pairs:
-                p = pvals.loc[pair[0], pair[1]]
-                pvalues.append(p)
-                l_pairs.append(pair)
-
-        if len(l_pairs) > 0:
-            annotator = Annotator(ax, l_pairs, data=df_plot, x="variable", y="value")
-            annotator.pvalue_format.config(fontsize=12)
-            annotator.configure(test_short_name="DeLong", text_format="simple",
-                                verbose=0, text_offset=1.5, line_width=1)
-            annotator.set_pvalues_and_annotate(pvalues)
+    # if pvals is not None:
+    #     if pairs == "significant":
+    #         l_pairs, pvalues = [], []
+    #         comb = combinations(models, 2)
+    #         for pair in comb:
+    #             p = pvals.loc[pair[0], pair[1]]
+    #             if p <= 0.05:
+    #                 pvalues.append(p)
+    #                 l_pairs.append(pair)
+    #     elif pairs == "all":
+    #         l_pairs, pvalues = [], []
+    #         comb = combinations(models, 2)
+    #         for pair in comb:
+    #             p = pvals.loc[pair[0], pair[1]]
+    #             pvalues.append(p)
+    #             l_pairs.append(pair)
+    #     else:
+    #         l_pairs, pvalues = [], []
+    #         for pair in pairs:
+    #             p = pvals.loc[pair[0], pair[1]]
+    #             pvalues.append(p)
+    #             l_pairs.append(pair)
+    #
+    #     if len(l_pairs) > 0:
+    #         annotator = Annotator(ax, l_pairs, data=df_plot, x="variable", y="value")
+    #         annotator.pvalue_format.config(fontsize=12)
+    #         annotator.configure(test_short_name="DeLong", text_format="simple",
+    #                             verbose=0, text_offset=1.5, line_width=1)
+    #         annotator.set_pvalues_and_annotate(pvalues)
 
     plt.tight_layout()
     plt.show()
     return fig
 
 
-def plot_rankings(results, models, metrics, plot_all=True, ax=None, title=None):
-    # rankings = np.argsort(np.argsort(results[['metric'] + models].iloc[:, 1:]))
-    rankings = results[['metric'] + models].iloc[:, 1:].rank(ascending=False, axis=1)
-    rankings["metric"] = results["metric"]
-
-    if ax is None:
-        fig, ax = plt.subplots(figsize=(9, 10))
-    else:
-        fig = ax.get_figure()
-
-    df_plot = rankings[rankings["metric"] == metrics].melt(id_vars=["metric"])
-    sns.boxplot(data=df_plot[df_plot["metric"] == metrics], y="variable", x="value", ax=ax, orient="h", palette="tab20",
-                medianprops={"linewidth": 4, "solid_capstyle": "butt"})
-
-    if plot_all:
-        ax.hlines(3.5, -5, 25, colors='k', linestyles='--')
-        ax.text(15.5, 1.5, "1 modality", weight='bold', va='center', ha='left', fontsize=12)
-        ax.hlines(9.5, -5, 25, colors='k', linestyles='--')
-        ax.text(15.5, 6.5, "2 modalities", weight='bold', va='center', ha='left', fontsize=12)
-        ax.hlines(13.5, -5, 25, colors='k', linestyles='--')
-        ax.text(15.5, 11.5, "3 modalities", weight='bold', va='center', ha='left', fontsize=12)
-        ax.vlines(22.5, 0.45, 1, colors='k', linestyles='--')
-        ax.text(15.5, 14, "4 modalities", weight='bold', va='center', ha='left', fontsize=12)
-        ax.set_xlim(0.5, 19)
-        ax.set(xlabel=None, ylabel=None)
-        ax.set_axisbelow(True)
-        ax.yaxis.grid(color='gray', linestyle='dashed')
-        ax.xaxis.grid(color='gray', linestyle='dashed')
-        ax.set_xticks(list(range(1, 16)))
-        ax.tick_params(axis='y', labelsize=14)
-        ax.tick_params(axis='x', labelsize=14)
-    else:
-        ax.hlines(0.5, -5, 25, colors='k', linestyles='--')
-        ax.text(8.5, 0, "1 modality", weight='bold', va='bottom', ha='left', fontsize=12)
-        ax.hlines(3.5, -5, 25, colors='k', linestyles='--')
-        ax.text(8.5, 2, "2 modalities", weight='bold', va='bottom', ha='left', fontsize=12)
-        ax.hlines(6.5, -5, 25, colors='k', linestyles='--')
-        ax.text(8.5, 5, "3 modalities", weight='bold', va='bottom', ha='left', fontsize=12)
-        ax.vlines(22.5, 0.45, 1, colors='k', linestyles='--')
-        ax.text(8.5, 7, "4 modalities", weight='bold', va='bottom', ha='left', fontsize=12)
-        ax.set_xlim(0.5, 10.5)
-        ax.set(xlabel=None, ylabel=None)
-        ax.set_axisbelow(True)
-        ax.yaxis.grid(color='gray', linestyle='dashed')
-        ax.xaxis.grid(color='gray', linestyle='dashed')
-        ax.set_xticks(list(range(1, 9)))
-        ax.tick_params(axis='y', labelsize=14)
-        ax.tick_params(axis='x', labelsize=14)
-
-    if title is not None:
-        ax.set_title(title, fontsize=14)
-    else:
-        ax.set_title(metrics + " ranking", fontsize=14)
-    plt.tight_layout()
-    return fig
-
-
 def plot_survival(predictions, model, target, target_name="0S", ax=None, title=None, xmax=None):
+    """
+    Plot survival curves for patients stratified with respect to the predictions of a model (collected with a repeated
+    cross-validation scheme).
+
+    Parameters
+    ----------
+    predictions: pandas DataFrame of shape (n_samples*n_repeats, n_models + 1)
+        Dataframe containing the predictions of different models for each sample and for each repeat of the
+        cross-validation scheme.
+
+              | samples | model_1 | ... | model_k | repeats |
+          0   | name_1  | O.3     | ... | 0.5     |    0    |
+                                 ...
+          N-1 | name_N  | O.2     | ... | 0.9     |    0    |
+          N   | name_1  | O.7     | ... | 0.1     |    1    |
+                                 ...
+
+    model: str
+        model name.
+
+    target: pandas DataFrame of shape (n_samples, 2)
+        Dataframe containing the event indicator and observed time for each sample
+
+               | event | time |
+        name_1 |  0    | 1034 |
+        name_2 |  1    |  239 |
+                    ...
+
+    target_name: str.
+        Target name.
+
+    ax : matplotlib.axes, None
+        The default is None.
+
+    title: str, None.
+        Title of the plot. If None, no title is displayed. The default is None
+
+    xmax: float, None.
+        Maximum time to consider. The default is None.
+
+    Returns
+    -------
+    matplotlib.pyplot.figure
+        Generated figure displaying survival curves.
+
+    """
     if ax is None:
         fig, ax = plt.subplots(figsize=(10, 8))
     else:
@@ -232,10 +248,33 @@ def plot_survival(predictions, model, target, target_name="0S", ax=None, title=N
     ax.set_xlabel("days", fontsize=12)
     ax.yaxis.set_tick_params(labelsize=12)
     plt.tight_layout()
-    return fig, group1
+    return fig
 
 
 def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
+    """
+    Generate a SHAP values plot for visualizing feature importance.
+
+    Parameters
+    ----------
+    data : pandas DataFrame
+        The input dataset.
+
+    shap_values : numpy array or pandas DataFrame
+        SHAP values corresponding to the input data.
+
+    n_best : int, optional
+        Number of top features to display. Default is 10.
+
+    figsize : tuple, optional
+        Size of the figure (width, height). Default is (9, 10).
+
+    Returns
+    -------
+    fig : matplotlib.figure.Figure
+        Generated figure displaying SHAP values.
+    """
+
     data_quantiles = data.apply(lambda col: pd.qcut(col.rank(method="first"), q=20, labels=False), axis=0)
 
     # mask_reduced = np.any(shap_values != 0, axis=1)
