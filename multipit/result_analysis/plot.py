@@ -79,7 +79,7 @@ def plot_metrics(
             hue="metric",
             hue_order=metrics,
             ax=ax,
-            ci=None,
+            errorbar=None,
         )
 
         for i, m in enumerate(metrics):
@@ -92,13 +92,12 @@ def plot_metrics(
                 capsize=10,
                 elinewidth=1,
             )
-
         ax.legend(bbox_to_anchor=(1.08, 1.005), fontsize=12)
 
     elif isinstance(metrics, str):
         df_plot = results[results["metric"] == metrics].melt(id_vars=["metric"])
         sns.barplot(
-            data=df_plot, x="variable", y="value", ax=ax, ci=None, palette="tab20"
+            data=df_plot, x="variable", y="value", hue="variable", legend=False, ax=ax, errorbar=None, palette="tab20"
         )
         ax.errorbar(
             x=np.arange(len(models)),
@@ -120,6 +119,7 @@ def plot_metrics(
         y_text = 0.85
 
     if annotations is not None:
+        last_key = list(annotations.keys())[-1]
         for annot, element in annotations.items():
             ax.text(
                 element[0] + 0.5 * (element[1] - element[0]),
@@ -130,7 +130,8 @@ def plot_metrics(
                 ha="center",
                 fontsize=12,
             )
-            ax.vlines(element[1] + 0.5, 0, 1, colors="k", linestyles="--")
+            if annot != last_key:
+                ax.vlines(element[1] + 0.5, 0, 1, colors="k", linestyles="--")
 
     ax.tick_params(axis="y", labelsize=14)
     ax.tick_params(axis="x", labelsize=14)
