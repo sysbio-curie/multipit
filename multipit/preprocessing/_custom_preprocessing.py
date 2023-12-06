@@ -57,7 +57,9 @@ class CustomImputer(_BaseImputer):
         self: object
             Fitted estimator.
         """
-        self.mask_cat_, self.mask_num_ = np.zeros(X.shape[1], bool), np.zeros(X.shape[1], bool)
+        self.mask_cat_, self.mask_num_ = np.zeros(X.shape[1], bool), np.zeros(
+            X.shape[1], bool
+        )
         if self.categoricals is not None:
             self.mask_cat_[self.categoricals] = True
             self.imputer_cat.fit(X[:, self.mask_cat_])
@@ -104,10 +106,10 @@ class CustomSelection(BaseEstimator, TransformerMixin):
 
     max_corr: float in [0, 1]
         This parameter sets the threshold for the Pearson correlation. When analyzing feature performance, starting from
-        the top-performing feature, all features with a Pearson correlation above this threshold are excluded. 
+        the top-performing feature, all features with a Pearson correlation above this threshold are excluded.
         Subsequently, the algorithm considers the second-best performing feature among those that were not filtered out,
         and continues this process iteratively. If max_corr=1, no threshold is applied. The default is 0.8.
-        
+
     max_number: int.
         Maximum number of selected features. If the number of remaining features after the different filtering steps is
         lower than max_number or if max_number is None all the remaining features are kept. The default is None.
@@ -122,7 +124,13 @@ class CustomSelection(BaseEstimator, TransformerMixin):
         List of indexes corresponding to the selected features.
     """
 
-    def __init__(self, threshold=None, max_corr=0.8, max_number=None, predictive_task="classification"):
+    def __init__(
+        self,
+        threshold=None,
+        max_corr=0.8,
+        max_number=None,
+        predictive_task="classification",
+    ):
         self.threshold = threshold
         self.max_corr = max_corr
         self.max_number = max_number
@@ -169,7 +177,9 @@ class CustomSelection(BaseEstimator, TransformerMixin):
                 auc = roc_auc_score(y[~mask], X[~mask][:, i])
                 scores[i] = max(auc, 1 - auc)
         else:
-            raise ValueError("Only 'survival' or 'classification' are available for predictive_task parameter")
+            raise ValueError(
+                "Only 'survival' or 'classification' are available for predictive_task parameter"
+            )
         if self.threshold is not None:
             self.features_ = self.features_[scores >= self.threshold]
             assert len(self.features_) > 0
@@ -183,22 +193,28 @@ class CustomSelection(BaseEstimator, TransformerMixin):
             delete = []
             for i in range(len(self.features_) - 1):
                 if i not in delete:
-                    delete += list((i + 1) + np.where(corr[i, i + 1:] > self.max_corr)[0])
+                    delete += list(
+                        (i + 1) + np.where(corr[i, i + 1 :] > self.max_corr)[0]
+                    )
             delete = np.unique(delete)
             if len(delete) > 0:
                 self.features_ = np.delete(self.features_, delete)
 
-        if modalities is not None and (self.max_number is not None and len(self.features_) > self.max_number):
+        if modalities is not None and (
+            self.max_number is not None and len(self.features_) > self.max_number
+        ):
             n_modalities = len(np.unique(modalities))
             n_select_modalities = self.max_number // n_modalities
             modalities_ordered = modalities[self.features_]
             list_features = []
             for m in np.unique(modalities):
-                list_features += list(self.features_[modalities_ordered == m][:n_select_modalities])
+                list_features += list(
+                    self.features_[modalities_ordered == m][:n_select_modalities]
+                )
             self.features_ = np.array(list_features)
         else:
             if self.max_number is not None and len(self.features_) > self.max_number:
-                self.features_ = self.features_[:self.max_number]
+                self.features_ = self.features_[: self.max_number]
         return self
 
     def transform(self, X):
@@ -234,7 +250,7 @@ class CustomScaler(BaseEstimator, TransformerMixin):
 
     """
 
-    def __init__(self, features=None, strategy='standardize'):
+    def __init__(self, features=None, strategy="standardize"):
         self.features = features
         self.strategy = strategy
 
@@ -255,14 +271,16 @@ class CustomScaler(BaseEstimator, TransformerMixin):
             Fitted estimator.
         """
 
-        if self.strategy == 'standardize':
+        if self.strategy == "standardize":
             self.scaler_ = StandardScaler()
-        elif self.strategy == 'robust':
+        elif self.strategy == "robust":
             self.scaler_ = RobustScaler()
-        elif self.strategy == 'minmax':
+        elif self.strategy == "minmax":
             self.scaler_ = MinMaxScaler()
         else:
-            raise ValueError("Only 'standardize', 'robust', or 'minmax' are available for the scaling strategy")
+            raise ValueError(
+                "Only 'standardize', 'robust', or 'minmax' are available for the scaling strategy"
+            )
 
         # deal with cases where X is empty ?
         if X.shape[1] == 0:

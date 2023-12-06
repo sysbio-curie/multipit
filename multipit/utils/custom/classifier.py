@@ -30,6 +30,10 @@ class CustomXGBoostClassifier(xgb.sklearn.XGBClassifier):
         self : object
             Fitted estimator.
         """
-        super(CustomXGBoostClassifier, self).set_params(scale_pos_weight=(y == 0).sum() / (y == 1).sum())
-        super(CustomXGBoostClassifier, self).fit(X=X, y=y, feature_weights=feature_weights)
+        super(CustomXGBoostClassifier, self).set_params(
+            scale_pos_weight=(y == 0).sum() / (y == 1).sum()
+        )
+        super(CustomXGBoostClassifier, self).fit(
+            X=X, y=y, feature_weights=feature_weights
+        )
         return self

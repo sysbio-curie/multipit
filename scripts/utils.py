@@ -14,15 +14,15 @@ def encode_biopsy_site(df_rna):
             d[site] = 0
         elif site in ["META_PLEVRE", "META_PLEVRE_HL", "META_PLEVRE_CL"]:
             d[site] = 1
-        elif site.split('_')[0] == 'ADP':
+        elif site.split("_")[0] == "ADP":
             d[site] = 2
-        elif site == 'META_OS':
+        elif site == "META_OS":
             d[site] = 3
-        elif site == 'META_FOIE':
+        elif site == "META_FOIE":
             d[site] = 4
-        elif site == 'META_SURRENALE':
+        elif site == "META_SURRENALE":
             d[site] = 5
-        elif site == 'META_BRAIN':
+        elif site == "META_BRAIN":
             d[site] = 6
         else:
             d[site] = 7

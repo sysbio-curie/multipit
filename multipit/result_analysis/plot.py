@@ -9,7 +9,16 @@ from lifelines.statistics import logrank_test
 from matplotlib.lines import Line2D
 
 
-def plot_metrics(results, metrics, models=None, annotations=None, title=None, ylim=None, y_text=None, ax=None):
+def plot_metrics(
+    results,
+    metrics,
+    models=None,
+    annotations=None,
+    title=None,
+    ylim=None,
+    y_text=None,
+    ax=None,
+):
     """
     Plot the results of the repeated cross-validation experiments for different models with a barplot.
 
@@ -63,29 +72,47 @@ def plot_metrics(results, metrics, models=None, annotations=None, title=None, yl
 
     if isinstance(metrics, list):
         df_plot = results[results["metric"].isin(metrics)].melt(id_vars=["metric"])
-        sns.barplot(data=df_plot, x="variable", y="value", hue="metric", hue_order=metrics, ax=ax, ci=None)
+        sns.barplot(
+            data=df_plot,
+            x="variable",
+            y="value",
+            hue="metric",
+            hue_order=metrics,
+            ax=ax,
+            ci=None,
+        )
 
         for i, m in enumerate(metrics):
-            ax.errorbar(x=np.arange(len(models)) + (-0.4 + (1 + 2 * i) * (0.4 / len(metrics))),
-                        y=results[results["metric"] == m].mean(axis=0).values,
-                        yerr=results[results["metric"] == m].std(axis=0).values,
-                        fmt='none',
-                        ecolor='k',
-                        capsize=10,
-                        elinewidth=1)
+            ax.errorbar(
+                x=np.arange(len(models)) + (-0.4 + (1 + 2 * i) * (0.4 / len(metrics))),
+                y=results[results["metric"] == m].mean(axis=0).values,
+                yerr=results[results["metric"] == m].std(axis=0).values,
+                fmt="none",
+                ecolor="k",
+                capsize=10,
+                elinewidth=1,
+            )
 
         ax.legend(bbox_to_anchor=(1.08, 1.005), fontsize=12)
 
     elif isinstance(metrics, str):
         df_plot = results[results["metric"] == metrics].melt(id_vars=["metric"])
-        sns.barplot(data=df_plot, x="variable", y="value", ax=ax, ci=None, palette="tab20")
-        ax.errorbar(x=np.arange(len(models)),
-                    y=results[results["metric"] == metrics].mean(axis=0, numeric_only=True).values,
-                    yerr=results[results["metric"] == metrics].std(axis=0, numeric_only=True).values,
-                    fmt='none',
-                    ecolor='k',
-                    capsize=10,
-                    elinewidth=1)
+        sns.barplot(
+            data=df_plot, x="variable", y="value", ax=ax, ci=None, palette="tab20"
+        )
+        ax.errorbar(
+            x=np.arange(len(models)),
+            y=results[results["metric"] == metrics]
+            .mean(axis=0, numeric_only=True)
+            .values,
+            yerr=results[results["metric"] == metrics]
+            .std(axis=0, numeric_only=True)
+            .values,
+            fmt="none",
+            ecolor="k",
+            capsize=10,
+            elinewidth=1,
+        )
     else:
         raise ValueError("")
 
@@ -94,23 +121,30 @@ def plot_metrics(results, metrics, models=None, annotations=None, title=None, yl
 
     if annotations is not None:
         for annot, element in annotations.items():
-            ax.text(element[0] + 0.5*(element[1] - element[0]), y_text, annot, weight='bold', va='bottom', ha='center',
-                    fontsize=12)
-            ax.vlines(element[1]+0.5, 0, 1, colors='k', linestyles='--')
+            ax.text(
+                element[0] + 0.5 * (element[1] - element[0]),
+                y_text,
+                annot,
+                weight="bold",
+                va="bottom",
+                ha="center",
+                fontsize=12,
+            )
+            ax.vlines(element[1] + 0.5, 0, 1, colors="k", linestyles="--")
 
-    ax.tick_params(axis='y', labelsize=14)
-    ax.tick_params(axis='x', labelsize=14)
+    ax.tick_params(axis="y", labelsize=14)
+    ax.tick_params(axis="x", labelsize=14)
 
     if ylim is not None:
         ax.set_ylim(ylim[0], ylim[1])
     else:
-        ax.set_ylim(0.5, 1.)
+        ax.set_ylim(0.5, 1.0)
 
     if title is not None:
         ax.set_title(title, fontsize=14)
 
     ax.set_axisbelow(True)
-    ax.yaxis.grid(color='gray', linestyle='dashed')
+    ax.yaxis.grid(color="gray", linestyle="dashed")
     ax.set(xlabel=None, ylabel=None)
     sns.despine()
 
@@ -149,7 +183,9 @@ def plot_metrics(results, metrics, models=None, annotations=None, title=None, yl
     return fig
 
 
-def plot_survival(predictions, model, target, target_name="0S", ax=None, title=None, xmax=None):
+def plot_survival(
+    predictions, model, target, target_name="0S", ax=None, title=None, xmax=None
+):
     """
     Plot survival curves for patients stratified with respect to the predictions of a model (collected with a repeated
     cross-validation scheme).
@@ -201,12 +237,14 @@ def plot_survival(predictions, model, target, target_name="0S", ax=None, title=N
     else:
         fig = ax.get_figure()
 
-    stats_pred = predictions.groupby("samples").apply(lambda df: (1 * (df[model] > 0.5)).mean(axis=0))
+    stats_pred = predictions.groupby("samples").apply(
+        lambda df: (1 * (df[model] > 0.5)).mean(axis=0)
+    )
     target = target.dropna(subset=["time", "event"])  # .loc[stats_pred.index]
 
     if xmax is not None:
-        target.loc[target['time'] > xmax, 'time'] = xmax
-        target.loc[target['time'] > xmax, 'event'] = False
+        target.loc[target["time"] > xmax, "time"] = xmax
+        target.loc[target["time"] > xmax, "event"] = False
 
     # if xmax is not None:
     #     group1 = (stats_pred.loc[target.index] > 0.5) & (target['time'] <= xmax)
@@ -218,22 +256,34 @@ def plot_survival(predictions, model, target, target_name="0S", ax=None, title=N
     group1 = stats_pred.loc[target.index] > 0.5
     group2 = stats_pred.loc[target.index] <= 0.5
 
-    kmf1 = KaplanMeierFitter(label="Predicted " + target_name + " 1 ")  # (n = " + str(group.sum()) + ")")
-    kmf1.fit(target[group1]['time'].dropna(), target[group1]['event'].dropna())
+    kmf1 = KaplanMeierFitter(
+        label="Predicted " + target_name + " 1 "
+    )  # (n = " + str(group.sum()) + ")")
+    kmf1.fit(target[group1]["time"].dropna(), target[group1]["event"].dropna())
     kmf1.plot(ax=ax, show_censors=True)
-    kmf2 = KaplanMeierFitter(label="Predicted " + target_name + " 0 ")  # (n = " + str((~group).sum()) + ")")
-    kmf2.fit(target[group2]['time'].dropna(), target[group2]['event'].dropna())
+    kmf2 = KaplanMeierFitter(
+        label="Predicted " + target_name + " 0 "
+    )  # (n = " + str((~group).sum()) + ")")
+    kmf2.fit(target[group2]["time"].dropna(), target[group2]["event"].dropna())
     kmf2.plot(ax=ax, show_censors=True)
     add_at_risk_counts(kmf1, kmf2, ax=ax)
 
-    test = logrank_test(durations_A=target[group1]['time'].dropna(),
-                        durations_B=target[group2]['time'].dropna(),
-                        event_observed_A=1 * (target[group1]['event'].dropna()),
-                        event_observed_B=1 * (target[group2]['event'].dropna()),
-                        )
-    pval = test.summary['p'].values[0]
-    leg = Line2D([0], [0], marker='o', color='w', markerfacecolor="black", label='pvalue = ' + str(np.round(pval, 10)),
-                 markersize=7)
+    test = logrank_test(
+        durations_A=target[group1]["time"].dropna(),
+        durations_B=target[group2]["time"].dropna(),
+        event_observed_A=1 * (target[group1]["event"].dropna()),
+        event_observed_B=1 * (target[group2]["event"].dropna()),
+    )
+    pval = test.summary["p"].values[0]
+    leg = Line2D(
+        [0],
+        [0],
+        marker="o",
+        color="w",
+        markerfacecolor="black",
+        label="pvalue = " + str(np.round(pval, 10)),
+        markersize=7,
+    )
     handles, labels = ax.get_legend_handles_labels()
     handles.append(leg)
     ax.legend(handles=handles, fontsize=12)
@@ -242,7 +292,7 @@ def plot_survival(predictions, model, target, target_name="0S", ax=None, title=N
     ax.set_ylim(-0.05, 1.05)
     ax.set_axisbelow(True)
     sns.despine()
-    ax.yaxis.grid(color='gray', linestyle='dashed')
+    ax.yaxis.grid(color="gray", linestyle="dashed")
     # ax.set(xlabel="days", ylabel=None)
     ax.xaxis.set_tick_params(labelsize=12)
     ax.set_xlabel("days", fontsize=12)
@@ -275,31 +325,46 @@ def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
         Generated figure displaying SHAP values.
     """
 
-    data_quantiles = data.apply(lambda col: pd.qcut(col.rank(method="first"), q=20, labels=False), axis=0)
+    data_quantiles = data.apply(
+        lambda col: pd.qcut(col.rank(method="first"), q=20, labels=False), axis=0
+    )
 
     # mask_reduced = np.any(shap_values != 0, axis=1)
     # shap_values_reduced = shap_values[mask_reduced]
     # print(shap_values_reduced.shape)
     # quantiles_reduced = data_quantiles[mask_reduced]
 
-    best_features = np.abs(shap_values).mean(axis=0).sort_values(ascending=False).index[:n_best]
+    best_features = (
+        np.abs(shap_values).mean(axis=0).sort_values(ascending=False).index[:n_best]
+    )
 
     temp = shap_values[best_features].melt()
     temp["quantiles"] = data_quantiles[best_features].melt()["value"]
 
     fig, ax = plt.subplots(figsize=figsize)
 
-    sns.stripplot(data=temp, x="value", y="variable", hue="quantiles", ax=ax, orient="h", s=5, palette="bwr")
+    sns.stripplot(
+        data=temp,
+        x="value",
+        y="variable",
+        hue="quantiles",
+        ax=ax,
+        orient="h",
+        s=5,
+        palette="bwr",
+    )
 
-    ax.vlines(0, -1, n_best, colors='gray')
+    ax.vlines(0, -1, n_best, colors="gray")
     ax.set_ylim(-1, n_best)
     ax.set_axisbelow(True)
-    ax.yaxis.grid(color='gray', linestyle='dashed')
+    ax.yaxis.grid(color="gray", linestyle="dashed")
     ax.legend().set_visible(False)
     ax.set(xlabel=None, ylabel=None)
     sns.despine(left=True)
-    cb = fig.colorbar(cm.ScalarMappable(cmap='bwr'), ticks=[0, 1], aspect=80, ax=ax, shrink=0.9)
-    cb.set_ticklabels(['low', 'high'])
+    cb = fig.colorbar(
+        cm.ScalarMappable(cmap="bwr"), ticks=[0, 1], aspect=80, ax=ax, shrink=0.9
+    )
+    cb.set_ticklabels(["low", "high"])
     cb.set_label("Feature value", size=12, labelpad=0)
     cb.ax.tick_params(labelsize=11, length=0)
     cb.set_alpha(1)

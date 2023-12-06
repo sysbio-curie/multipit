@@ -85,8 +85,18 @@ class LateFusionClassifier(BaseEstimator):
         estimators fitted to clibrate the multimodal models.
     """
 
-    def __init__(self, estimators, cv=None, score=None, random_score=0.5, sup_weights=False,
-                 missing_threshold=0.9, tuning=None, n_jobs=None, calibration="late"):
+    def __init__(
+        self,
+        estimators,
+        cv=None,
+        score=None,
+        random_score=0.5,
+        sup_weights=False,
+        missing_threshold=0.9,
+        tuning=None,
+        n_jobs=None,
+        calibration="late",
+    ):
         self.estimators = estimators
         self.cv = cv
         self.score = score
@@ -126,23 +136,31 @@ class LateFusionClassifier(BaseEstimator):
         for name, estim, features, grid in self.estimators:
             Xnew = X[:, features]
             # bool_mask = ~(np.sum(np.isnan(Xnew), axis=1) > self.missing_threshold * len(features))
-            bool_mask = ~(np.sum(pd.isnull(Xnew), axis=1) > self.missing_threshold * len(features))
+            bool_mask = ~(
+                np.sum(pd.isnull(Xnew), axis=1) > self.missing_threshold * len(features)
+            )
             Xnew, ynew = Xnew[bool_mask, :], y[bool_mask]
             # Fit unimodal estimator
-            self._fit_estim(Xnew, ynew, estim=estim, features=features, grid=grid, name=name)
+            self._fit_estim(
+                Xnew, ynew, estim=estim, features=features, grid=grid, name=name
+            )
 
             # Collect predictions and weights for further calibration
             if self.calibration is not None:
                 weights[bool_mask, i] = max(self.weights_[-1] - self.random_score, 0)
                 parallel = Parallel(n_jobs=self.n_jobs)
-                collected_predictions = parallel(delayed(_collect)(Xdata=X,
-                                                                   ydata=y,
-                                                                   estimator=estim,
-                                                                   bmask=bool_mask,
-                                                                   feat=features,
-                                                                   train=train,
-                                                                   test=test)
-                                                 for train, test in self.cv.split(X, y))
+                collected_predictions = parallel(
+                    delayed(_collect)(
+                        Xdata=X,
+                        ydata=y,
+                        estimator=estim,
+                        bmask=bool_mask,
+                        feat=features,
+                        train=train,
+                        test=test,
+                    )
+                    for train, test in self.cv.split(X, y)
+                )
                 for indexes, preds in collected_predictions:
                     predictions[indexes, i] = preds
             i += 1
@@ -152,9 +170,13 @@ class LateFusionClassifier(BaseEstimator):
             if self.calibration == "early":
                 self._fit_early_calibration(predictions=predictions, y=y)
             elif self.calibration == "late":
-                self._fit_late_calibration(predictions=predictions, weights=weights, y=y)
+                self._fit_late_calibration(
+                    predictions=predictions, weights=weights, y=y
+                )
             else:
-                raise ValueError("'early', 'late' or None are the only values available for calibration parameter")
+                raise ValueError(
+                    "'early', 'late' or None are the only values available for calibration parameter"
+                )
 
         self.weights_ = np.array(self.weights_) - self.random_score
         self.weights_ = np.where(self.weights_ > 0, self.weights_, 0)
@@ -165,19 +187,30 @@ class LateFusionClassifier(BaseEstimator):
         Fit a unimodal estimator.
         """
         if (self.tuning is not None) and (len(grid) > 0):
-            if self.tuning == 'gridsearch':
-                search = GridSearchCV(estimator=clone(estim), param_grid=grid, cv=self.cv, scoring=self.score,
-                                      n_jobs=self.n_jobs)
-            elif self.tuning == 'randomsearch':
-                search = RandomizedSearchCV(estimator=clone(estim), param_distributions=grid[1], n_iter=grid[0],
-                                            scoring=self.score, n_jobs=self.n_jobs, cv=self.cv)
+            if self.tuning == "gridsearch":
+                search = GridSearchCV(
+                    estimator=clone(estim),
+                    param_grid=grid,
+                    cv=self.cv,
+                    scoring=self.score,
+                    n_jobs=self.n_jobs,
+                )
+            elif self.tuning == "randomsearch":
+                search = RandomizedSearchCV(
+                    estimator=clone(estim),
+                    param_distributions=grid[1],
+                    n_iter=grid[0],
+                    scoring=self.score,
+                    n_jobs=self.n_jobs,
+                    cv=self.cv,
+                )
 
             search.fit(X, y)
 
             if self.sup_weights:
                 self.weights_.append(search.best_score_)
             else:
-                self.weights_.append(1.)
+                self.weights_.append(1.0)
 
             temp = search.best_estimator_
             self.best_params_.append(search.best_params_)
@@ -185,11 +218,20 @@ class LateFusionClassifier(BaseEstimator):
             # print("Best score " + name + " :", search.best_score_)
         else:
             if self.sup_weights:
-                self.weights_.append(np.mean(
-                    cross_val_score(estimator=clone(estim), X=X, y=y, cv=self.cv, scoring=self.score,
-                                    n_jobs=self.n_jobs)))
+                self.weights_.append(
+                    np.mean(
+                        cross_val_score(
+                            estimator=clone(estim),
+                            X=X,
+                            y=y,
+                            cv=self.cv,
+                            scoring=self.score,
+                            n_jobs=self.n_jobs,
+                        )
+                    )
+                )
             else:
-                self.weights_.append(1.)
+                self.weights_.append(1.0)
             temp = clone(estim).fit(X, y)
 
         self.fitted_estimators_.append((name, temp, features))
@@ -202,8 +244,9 @@ class LateFusionClassifier(BaseEstimator):
         for i in range(len(self.estimators)):
             probas = predictions[:, i]
             mask = (probas > 0).reshape(-1)
-            self.fitted_meta_estimators_[i] = LogisticRegression(class_weight='balanced').fit(
-                probas[mask].reshape(-1, 1), y[mask])
+            self.fitted_meta_estimators_[i] = LogisticRegression(
+                class_weight="balanced"
+            ).fit(probas[mask].reshape(-1, 1), y[mask])
         return
 
     def _fit_late_calibration(self, predictions, weights, y):
@@ -222,8 +265,9 @@ class LateFusionClassifier(BaseEstimator):
                     w[temp > 0] = w[temp > 0] / (temp[temp > 0].reshape(-1, 1))
                     probas = np.sum(probas * w, axis=1)
 
-                self.fitted_meta_estimators_[comb] = LogisticRegression(class_weight='balanced').fit(
-                    probas[mask].reshape(-1, 1), y[mask])
+                self.fitted_meta_estimators_[comb] = LogisticRegression(
+                    class_weight="balanced"
+                ).fit(probas[mask].reshape(-1, 1), y[mask])
         return
 
     def predict_proba(self, X, estim_ind=None):
@@ -247,9 +291,16 @@ class LateFusionClassifier(BaseEstimator):
             Probability of the samples for each class. If no modality are availbale for the sample, returns 0.5 for
             both classes.
         """
-        fitted_estimators = [self.fitted_estimators_[i] for i in estim_ind] if estim_ind is not None \
+        fitted_estimators = (
+            [self.fitted_estimators_[i] for i in estim_ind]
+            if estim_ind is not None
             else self.fitted_estimators_
-        fitted_weights = np.array([self.weights_[i] for i in estim_ind]) if estim_ind is not None else self.weights_
+        )
+        fitted_weights = (
+            np.array([self.weights_[i] for i in estim_ind])
+            if estim_ind is not None
+            else self.weights_
+        )
 
         # Collect predictions for each modality
         preds = np.zeros((X.shape[0], len(fitted_estimators)))
@@ -257,7 +308,9 @@ class LateFusionClassifier(BaseEstimator):
         for j, item in enumerate(fitted_estimators):
             Xpred = X[:, item[2]].copy()
             # bool_mask = ~(np.sum(np.isnan(Xpred), axis=1) > self.missing_threshold * len(item[2]))
-            bool_mask = ~(np.sum(pd.isnull(Xpred), axis=1) > self.missing_threshold * len(item[2]))
+            bool_mask = ~(
+                np.sum(pd.isnull(Xpred), axis=1) > self.missing_threshold * len(item[2])
+            )
             weights[:, j] = np.where(bool_mask, fitted_weights[j], 0)
             preds[bool_mask, j] = item[1].predict_proba(Xpred[bool_mask, :])[:, 1]
 
@@ -268,7 +321,9 @@ class LateFusionClassifier(BaseEstimator):
             elif self.calibration == "early":
                 probas = self._predict_calibrate_early(preds, weights, estim_ind)
             else:
-                raise ValueError("'early', 'late' or None are the only values available for calibration parameter")
+                raise ValueError(
+                    "'early', 'late' or None are the only values available for calibration parameter"
+                )
         else:
             probas = self._predict_uncalibrated(preds, weights)
         return np.hstack([1 - probas, probas])
@@ -289,10 +344,17 @@ class LateFusionClassifier(BaseEstimator):
         """
         temp = np.sum(weights, axis=1)
         weights[temp > 0] = weights[temp > 0] / (temp[temp > 0].reshape(-1, 1))
-        list_meta_estimators = [self.fitted_meta_estimators_[i] for i in estim_ind] if estim_ind is not None \
+        list_meta_estimators = (
+            [self.fitted_meta_estimators_[i] for i in estim_ind]
+            if estim_ind is not None
             else list(self.fitted_meta_estimators_.values())
+        )
         for j, meta in enumerate(list_meta_estimators):
-            preds[:, j] = np.where(weights[:, j] != 0, meta.predict_proba(preds[:, j].reshape(-1, 1))[:, 1], 0)
+            preds[:, j] = np.where(
+                weights[:, j] != 0,
+                meta.predict_proba(preds[:, j].reshape(-1, 1))[:, 1],
+                0,
+            )
         probas = np.sum(preds * weights, axis=1)
         return np.where(temp == 0, 0.5, probas).reshape(-1, 1)
 
@@ -303,11 +365,18 @@ class LateFusionClassifier(BaseEstimator):
         temp = np.sum(weights, axis=1)
         weights[temp > 0] = weights[temp > 0] / (temp[temp > 0].reshape(-1, 1))
         probas = np.sum(preds * weights, axis=1)
-        meta_estimator = self.fitted_meta_estimators_[estim_ind] if estim_ind is not None \
+        meta_estimator = (
+            self.fitted_meta_estimators_[estim_ind]
+            if estim_ind is not None
             else list(self.fitted_meta_estimators_.values())[-1]
-        return np.where(temp == 0, 0.5, meta_estimator.predict_proba(probas.reshape(-1, 1))[:, 1]).reshape(-1, 1)
+        )
+        return np.where(
+            temp == 0, 0.5, meta_estimator.predict_proba(probas.reshape(-1, 1))[:, 1]
+        ).reshape(-1, 1)
 
-    def find_logrank_threshold(self, X, ysurv, estim_ind, percentile_min=30, percentile_max=70):
+    def find_logrank_threshold(
+        self, X, ysurv, estim_ind, percentile_min=30, percentile_max=70
+    ):
         """
         Find the best cutoff that optimize the stratification of samples with respect to survival data (using logrank
         test).
@@ -331,7 +400,7 @@ class LateFusionClassifier(BaseEstimator):
 
         percentile_max: int in [0, 100]
             Maximum value of the percentile range used to explore various cutoff values for predicted probabilities
-            
+
         Returns
         -------
         cutoff: float.
@@ -345,23 +414,29 @@ class LateFusionClassifier(BaseEstimator):
             c = np.percentile(risk_score_new, p)
             group1 = risk_score_new <= c
             group2 = risk_score_new > c
-            test = logrank_test(durations_A=y_new[group1]['time'],
-                                durations_B=y_new[group2]['time'],
-                                event_observed_A=1 * (y_new[group1]['event']),
-                                event_observed_B=1 * (y_new[group2]['event']),
-                                )
+            test = logrank_test(
+                durations_A=y_new[group1]["time"],
+                durations_B=y_new[group2]["time"],
+                event_observed_A=1 * (y_new[group1]["event"]),
+                event_observed_B=1 * (y_new[group2]["event"]),
+            )
             cutoffs.append(c)
-            pvals.append(test.summary['p'].values[0])
+            pvals.append(test.summary["p"].values[0])
         return cutoffs[np.argmin(pvals)]
 
 
 def _collect(Xdata, ydata, estimator, bmask, feat, train, test):
-    Xtrain, Xtest, ytrain, ytest = Xdata[np.intersect1d(np.where(bmask)[0], train), :], \
-                                   Xdata[np.intersect1d(np.where(bmask)[0], test), :], \
-                                   ydata[np.intersect1d(np.where(bmask)[0], train)], \
-                                   ydata[np.intersect1d(np.where(bmask)[0], test)]
+    Xtrain, Xtest, ytrain, ytest = (
+        Xdata[np.intersect1d(np.where(bmask)[0], train), :],
+        Xdata[np.intersect1d(np.where(bmask)[0], test), :],
+        ydata[np.intersect1d(np.where(bmask)[0], train)],
+        ydata[np.intersect1d(np.where(bmask)[0], test)],
+    )
     tempbis = clone(estimator).fit(Xtrain[:, feat], ytrain)
-    return np.intersect1d(np.where(bmask)[0], test), tempbis.predict_proba(Xtest[:, feat])[:, 1]
+    return (
+        np.intersect1d(np.where(bmask)[0], test),
+        tempbis.predict_proba(Xtest[:, feat])[:, 1],
+    )
 
 
 class LateFusionSurvival(BaseEstimator):
@@ -427,8 +502,18 @@ class LateFusionSurvival(BaseEstimator):
         List of fitted unimodal estimators.
     """
 
-    def __init__(self, estimators, cv, score=None, random_score=0.5, sup_weights=True, missing_threshold=0.9,
-                 tuning=None, n_jobs=None, calibration=True):
+    def __init__(
+        self,
+        estimators,
+        cv,
+        score=None,
+        random_score=0.5,
+        sup_weights=True,
+        missing_threshold=0.9,
+        tuning=None,
+        n_jobs=None,
+        calibration=True,
+    ):
         self.estimators = estimators
         self.cv = cv
         self.score = score
@@ -446,20 +531,31 @@ class LateFusionSurvival(BaseEstimator):
     def _fit_estim(self, X, y, estim, features, grid, name):
 
         if (self.tuning is not None) and (len(grid) > 0):
-            if self.tuning == 'gridsearch':
-                search = GridSearchCV(estimator=clone(estim), param_grid=grid, cv=self.cv, scoring=self.score,
-                                      n_jobs=self.n_jobs)
+            if self.tuning == "gridsearch":
+                search = GridSearchCV(
+                    estimator=clone(estim),
+                    param_grid=grid,
+                    cv=self.cv,
+                    scoring=self.score,
+                    n_jobs=self.n_jobs,
+                )
 
-            elif self.tuning == 'randomsearch':
-                search = RandomizedSearchCV(estimator=clone(estim), param_distributions=grid[1], n_iter=grid[0],
-                                            scoring=self.score, n_jobs=self.n_jobs, cv=self.cv)
+            elif self.tuning == "randomsearch":
+                search = RandomizedSearchCV(
+                    estimator=clone(estim),
+                    param_distributions=grid[1],
+                    n_iter=grid[0],
+                    scoring=self.score,
+                    n_jobs=self.n_jobs,
+                    cv=self.cv,
+                )
 
             search.fit(X, y)
 
             if self.sup_weights:
                 self.weights_.append(search.best_score_)
             else:
-                self.weights_.append(1.)
+                self.weights_.append(1.0)
 
             temp = search.best_estimator_
             self.best_params_.append(search.best_params_)
@@ -467,10 +563,19 @@ class LateFusionSurvival(BaseEstimator):
             # print("Best score " + name + " :", search.best_score_)
         else:
             if self.sup_weights:
-                self.weights_.append(np.mean(
-                    cross_val_score(estimator=clone(estim), X=X, y=y, cv=self.cv, scoring=self.score)))
+                self.weights_.append(
+                    np.mean(
+                        cross_val_score(
+                            estimator=clone(estim),
+                            X=X,
+                            y=y,
+                            cv=self.cv,
+                            scoring=self.score,
+                        )
+                    )
+                )
             else:
-                self.weights_.append(1.)
+                self.weights_.append(1.0)
             temp = clone(estim).fit(X, y)
 
         # self.fitted_estimators_.append((name, temp, features))
@@ -496,20 +601,28 @@ class LateFusionSurvival(BaseEstimator):
         """
         for name, estim, features, grid in self.estimators:
             Xnew = X[:, features]
-            bool_mask = ~(np.sum(np.isnan(Xnew), axis=1) > self.missing_threshold * len(features))
+            bool_mask = ~(
+                np.sum(np.isnan(Xnew), axis=1) > self.missing_threshold * len(features)
+            )
             Xnew, ynew = Xnew[bool_mask, :], y[bool_mask]
 
-            fitted_estim = self._fit_estim(Xnew, ynew, estim=estim, features=features, grid=grid, name=name)
+            fitted_estim = self._fit_estim(
+                Xnew, ynew, estim=estim, features=features, grid=grid, name=name
+            )
             if self.calibration:
                 parallel = Parallel(n_jobs=self.n_jobs)
-                collected_predictions = parallel(delayed(_collect_surv)(Xdata=X,
-                                                                        ydata=y,
-                                                                        estimator=estim,
-                                                                        bmask=bool_mask,
-                                                                        feat=features,
-                                                                        train=train,
-                                                                        test=test)
-                                                 for train, test in self.cv.split(X, y))
+                collected_predictions = parallel(
+                    delayed(_collect_surv)(
+                        Xdata=X,
+                        ydata=y,
+                        estimator=estim,
+                        bmask=bool_mask,
+                        feat=features,
+                        train=train,
+                        test=test,
+                    )
+                    for train, test in self.cv.split(X, y)
+                )
                 temp = np.concatenate(collected_predictions)
                 mean, std = np.mean(temp), np.std(temp)
             else:
@@ -551,19 +664,25 @@ class LateFusionSurvival(BaseEstimator):
         weights = np.zeros((X.shape[0], len(fitted_estimators)))
         for j, item in enumerate(fitted_estimators):
             Xpred = X[:, item[2]].copy()
-            bool_mask = ~(np.sum(np.isnan(Xpred), axis=1) > self.missing_threshold * len(item[2]))
+            bool_mask = ~(
+                np.sum(np.isnan(Xpred), axis=1) > self.missing_threshold * len(item[2])
+            )
             weights[:, j] = np.where(bool_mask, self.weights_[j], 0)
             if self.calibration:
                 mean = item[3][0]
                 std = item[3][1] if item[3][1] != 0 else 1
-                preds[bool_mask, j] = (item[1].predict(Xpred[bool_mask, :]) - mean) / std
+                preds[bool_mask, j] = (
+                    item[1].predict(Xpred[bool_mask, :]) - mean
+                ) / std
             else:
                 preds[bool_mask, j] = item[1].predict(Xpred[bool_mask, :])
         temp = np.sum(weights, axis=1)
         weights[temp > 0] = weights[temp > 0] / (temp[temp > 0].reshape(-1, 1))
         return np.sum(preds * weights, axis=1)
 
-    def find_logrank_threshold(self, X, y, estim_ind, percentile_min=30, percentile_max=70):
+    def find_logrank_threshold(
+        self, X, y, estim_ind, percentile_min=30, percentile_max=70
+    ):
         """
         Find the best cutoff that optimize the stratification of samples with respect to survival data (using logrank
         test).
@@ -597,24 +716,27 @@ class LateFusionSurvival(BaseEstimator):
         bool_mask = risk_score == 0
         cutoffs, pvals = [], []
         risk_score_new, y_new = risk_score[~bool_mask], y[~bool_mask]
-        for p in np.arange(percentile_min, percentile_max+1):
+        for p in np.arange(percentile_min, percentile_max + 1):
             c = np.percentile(risk_score_new, p)
             group1 = risk_score_new <= c
             group2 = risk_score_new > c
-            test = logrank_test(durations_A=y_new[group1]['time'],
-                                durations_B=y_new[group2]['time'],
-                                event_observed_A=1 * (y_new[group1]['event']),
-                                event_observed_B=1 * (y_new[group2]['event']),
-                                )
+            test = logrank_test(
+                durations_A=y_new[group1]["time"],
+                durations_B=y_new[group2]["time"],
+                event_observed_A=1 * (y_new[group1]["event"]),
+                event_observed_B=1 * (y_new[group2]["event"]),
+            )
             cutoffs.append(c)
-            pvals.append(test.summary['p'].values[0])
+            pvals.append(test.summary["p"].values[0])
         return cutoffs[np.argmin(pvals)]
 
 
 def _collect_surv(Xdata, ydata, estimator, bmask, feat, train, test):
-    Xtrain, Xtest, ytrain, ytest = Xdata[np.intersect1d(np.where(bmask)[0], train), :], \
-                                   Xdata[np.intersect1d(np.where(bmask)[0], test), :], \
-                                   ydata[np.intersect1d(np.where(bmask)[0], train)], \
-                                   ydata[np.intersect1d(np.where(bmask)[0], test)]
+    Xtrain, Xtest, ytrain, ytest = (
+        Xdata[np.intersect1d(np.where(bmask)[0], train), :],
+        Xdata[np.intersect1d(np.where(bmask)[0], test), :],
+        ydata[np.intersect1d(np.where(bmask)[0], train)],
+        ydata[np.intersect1d(np.where(bmask)[0], test)],
+    )
     tempbis = clone(estimator).fit(Xtrain[:, feat], ytrain)
     return tempbis.predict(Xtest[:, feat])

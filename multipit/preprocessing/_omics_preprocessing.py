@@ -52,9 +52,14 @@ class CustomOmicsImputer(BaseEstimator, TransformerMixin):
             Fitted estimator.
         """
         self.imputer_ = KNNImputer(n_neighbors=1)
-        X[:, self.site_feature] = self.imputer_.fit_transform(X[:, self.site_feature].reshape(-1, 1)).reshape(-1)
-        self.encoder_ = OneHotEncoder(handle_unknown='infrequent_if_exist', min_frequency=self.min_frequency,
-                                      sparse_output=False).fit(X[:, self.site_feature].reshape(-1, 1))
+        X[:, self.site_feature] = self.imputer_.fit_transform(
+            X[:, self.site_feature].reshape(-1, 1)
+        ).reshape(-1)
+        self.encoder_ = OneHotEncoder(
+            handle_unknown="infrequent_if_exist",
+            min_frequency=self.min_frequency,
+            sparse_output=False,
+        ).fit(X[:, self.site_feature].reshape(-1, 1))
         return self
 
     def transform(self, X):
@@ -71,9 +76,10 @@ class CustomOmicsImputer(BaseEstimator, TransformerMixin):
         2D array of shape (n_samples, n_features + len_encoding_)
             Transformed data after imputation and encoding.
         """
-        X[:, self.site_feature] = self.imputer_.transform(X[:, self.site_feature].reshape(-1, 1)).reshape(-1)
+        X[:, self.site_feature] = self.imputer_.transform(
+            X[:, self.site_feature].reshape(-1, 1)
+        ).reshape(-1)
         b = self.encoder_.transform(X[:, self.site_feature].reshape(-1, 1))
         self.len_encoding_ = b.shape[1]
         a = np.delete(X, self.site_feature, 1)
         return np.hstack((a, b))
-

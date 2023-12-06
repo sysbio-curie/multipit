@@ -59,14 +59,20 @@ class CustomRandomForest(BaseEstimator, SurvivalAnalysisMixin):
             Fitted estimator.
         """
 
-        self.rf_ = RandomSurvivalForest(max_depth=self.max_depth, max_features=self.max_features)
+        self.rf_ = RandomSurvivalForest(
+            max_depth=self.max_depth, max_features=self.max_features
+        )
         self.nan_features_ = np.argwhere(np.isnan(X).sum(axis=0) > 0).reshape(-1)
         if len(self.nan_features_) > 0:
             X_notnan = np.delete(X, self.nan_features_, axis=1)
             X_nan = np.copy(X)[:, self.nan_features_]
-            X_new = np.hstack((X_notnan,
-                               np.where(np.isnan(X_nan), -1000, X_nan),
-                               np.where(np.isnan(X_nan), 1000, X_nan)))
+            X_new = np.hstack(
+                (
+                    X_notnan,
+                    np.where(np.isnan(X_nan), -1000, X_nan),
+                    np.where(np.isnan(X_nan), 1000, X_nan),
+                )
+            )
         else:
             X_new = np.copy(X)
         self.rf_.fit(X_new, y)
@@ -90,9 +96,13 @@ class CustomRandomForest(BaseEstimator, SurvivalAnalysisMixin):
         if len(self.nan_features_) > 0:
             X_notnan = np.delete(X, self.nan_features_, axis=1)
             X_nan = np.copy(X)[:, self.nan_features_]
-            X_new = np.hstack((X_notnan,
-                               np.where(np.isnan(X_nan), -1000, X_nan),
-                               np.where(np.isnan(X_nan), 1000, X_nan)))
+            X_new = np.hstack(
+                (
+                    X_notnan,
+                    np.where(np.isnan(X_nan), -1000, X_nan),
+                    np.where(np.isnan(X_nan), 1000, X_nan),
+                )
+            )
         else:
             X_new = np.copy(X)
         # Deal with unseen missing values during training

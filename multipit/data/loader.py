@@ -2,18 +2,20 @@ import pandas as pd
 from sksurv.util import Surv
 
 
-def load_TIPIT_multimoda(clinical_file,
-                         radiomics_file,
-                         pathomics_file,
-                         rna_file,
-                         order,
-                         clinical_features=None,
-                         radiomic_features=None,
-                         pathomics_features=None,
-                         rna_features=None,
-                         outcome='OS',
-                         survival_outcome=False,
-                         return_survival=None):
+def load_TIPIT_multimoda(
+    clinical_file,
+    radiomics_file,
+    pathomics_file,
+    rna_file,
+    order,
+    clinical_features=None,
+    radiomic_features=None,
+    pathomics_features=None,
+    rna_features=None,
+    outcome="OS",
+    survival_outcome=False,
+    return_survival=None,
+):
     """
     Loader for raw TIPIT data.
 
@@ -79,78 +81,128 @@ def load_TIPIT_multimoda(clinical_file,
     """
     # 1. Load raw data and concatenate them
     assert clinical_file is not None, "clinical data should always be provided"
-    df_clinicals = pd.read_csv(clinical_file, index_col=0, sep=';')
-    df_radiomics = pd.read_csv(radiomics_file, index_col=0, sep=';') if radiomics_file is not None else None
-    df_pathomics = pd.read_csv(pathomics_file, index_col=0, sep=';') if pathomics_file is not None else None
-    df_RNA = pd.read_csv(rna_file, index_col=0, sep=";") if rna_file is not None else None
+    df_clinicals = pd.read_csv(clinical_file, index_col=0, sep=";")
+    df_radiomics = (
+        pd.read_csv(radiomics_file, index_col=0, sep=";")
+        if radiomics_file is not None
+        else None
+    )
+    df_pathomics = (
+        pd.read_csv(pathomics_file, index_col=0, sep=";")
+        if pathomics_file is not None
+        else None
+    )
+    df_RNA = (
+        pd.read_csv(rna_file, index_col=0, sep=";") if rna_file is not None else None
+    )
 
-    list_data = [df for df in [df_clinicals, df_pathomics, df_RNA, df_radiomics] if df is not None]
-    df_total = pd.concat(list_data, axis=1, join='outer') if len(list_data) > 1 else list_data[0].copy()
+    list_data = [
+        df
+        for df in [df_clinicals, df_pathomics, df_RNA, df_radiomics]
+        if df is not None
+    ]
+    df_total = (
+        pd.concat(list_data, axis=1, join="outer")
+        if len(list_data) > 1
+        else list_data[0].copy()
+    )
 
     # 2. Collect outcome/target (either OS, PFS or Best Response (for classification))
     if survival_outcome:
-        if outcome == 'OS':
-            bool_mask = df_total['OS'].isnull()
+        if outcome == "OS":
+            bool_mask = df_total["OS"].isnull()
             df_total = df_total[~bool_mask]
-            target = df_total[['OS', 'Statut Vital']].rename(columns={"OS": "time", "Statut Vital": "event"})
-            target["event"] = 1*(target["event"] == "Decede")
-        elif outcome == 'PFS':
-            bool_mask = df_total['PFS'].isnull()
+            target = df_total[["OS", "Statut Vital"]].rename(
+                columns={"OS": "time", "Statut Vital": "event"}
+            )
+            target["event"] = 1 * (target["event"] == "Decede")
+        elif outcome == "PFS":
+            bool_mask = df_total["PFS"].isnull()
             df_total = df_total[~bool_mask]
-            target = df_total[['PFS', 'Progression']].rename(columns={"PFS": "time", "Progression": "event"})
-            target["event"] = 1*(target["event"] == 'Yes')
+            target = df_total[["PFS", "Progression"]].rename(
+                columns={"PFS": "time", "Progression": "event"}
+            )
+            target["event"] = 1 * (target["event"] == "Yes")
         else:
-            raise ValueError("outcome can only be 'OS' or 'PFS' when survival_outcome is True")
+            raise ValueError(
+                "outcome can only be 'OS' or 'PFS' when survival_outcome is True"
+            )
     else:
-        if outcome == 'OS':
-            bool_mask = (df_total['OS'].isnull()) | ((df_total['OS'] <= 365) & (df_total['Statut Vital'] == "Vivant"))
+        if outcome == "OS":
+            bool_mask = (df_total["OS"].isnull()) | (
+                (df_total["OS"] <= 365) & (df_total["Statut Vital"] == "Vivant")
+            )
             df_total = df_total[~bool_mask]
-            target = 1 * (df_total['OS'] <= 365)
+            target = 1 * (df_total["OS"] <= 365)
 
-        elif outcome == 'PFS':
-            bool_mask = (df_total['PFS'].isnull()) | ((df_total['PFS'] <= 180) & (df_total['Progression'] == "No"))
+        elif outcome == "PFS":
+            bool_mask = (df_total["PFS"].isnull()) | (
+                (df_total["PFS"] <= 180) & (df_total["Progression"] == "No")
+            )
             df_total = df_total[~bool_mask]
-            target = (1 * (df_total['PFS'] <= 180))
+            target = 1 * (df_total["PFS"] <= 180)
 
         elif outcome == "RECIST":
-            bool_mask = df_total['Best response'].isnull()
+            bool_mask = df_total["Best response"].isnull()
             df_total = df_total[~bool_mask]
-            target = 1 * ((df_total['Best response'] == 'Partielle') | (df_total['Best response'] == 'Complete'))
+            target = 1 * (
+                (df_total["Best response"] == "Partielle")
+                | (df_total["Best response"] == "Complete")
+            )
 
         else:
-            raise ValueError("outcome can only be 'OS','PFS' or 'RECIST' when survival_outcome is False")
+            raise ValueError(
+                "outcome can only be 'OS','PFS' or 'RECIST' when survival_outcome is False"
+            )
 
     # 3. Select specific features for each modality
-    datasets = {key: None for key in ['clinicals', 'radiomics', 'pathomics', 'RNA']}
+    datasets = {key: None for key in ["clinicals", "radiomics", "pathomics", "RNA"]}
     target_survival = None
 
     if clinical_features is not None:
-        datasets['clinicals'] = df_total[clinical_features]
+        datasets["clinicals"] = df_total[clinical_features]
     else:
-        datasets['clinicals'] = df_total[df_clinicals.columns].drop(columns=['OS', 'PFS', 'Statut Vital',
-                                                                             'Progression', 'Best response'],
-                                                                    errors='ignore')
+        datasets["clinicals"] = df_total[df_clinicals.columns].drop(
+            columns=["OS", "PFS", "Statut Vital", "Progression", "Best response"],
+            errors="ignore",
+        )
     if return_survival == "PFS":
-        target_survival = Surv().from_arrays(time=df_total["PFS"].values,
-                                             event=(1*(df_total["Progression"] == "Yes")).values)
+        target_survival = Surv().from_arrays(
+            time=df_total["PFS"].values,
+            event=(1 * (df_total["Progression"] == "Yes")).values,
+        )
     elif return_survival == "OS":
-        target_survival = Surv().from_arrays(time=df_total["OS"].values,
-                                             event=(1*(df_total["Statut Vital"] == "Decede")).values)
+        target_survival = Surv().from_arrays(
+            time=df_total["OS"].values,
+            event=(1 * (df_total["Statut Vital"] == "Decede")).values,
+        )
 
     if df_radiomics is not None:
-        datasets['radiomics'] = df_total[radiomic_features] if radiomic_features is not None \
+        datasets["radiomics"] = (
+            df_total[radiomic_features]
+            if radiomic_features is not None
             else df_total[df_radiomics.columns]
+        )
     if df_pathomics is not None:
-        datasets['pathomics'] = df_total[pathomics_features] if pathomics_features is not None \
+        datasets["pathomics"] = (
+            df_total[pathomics_features]
+            if pathomics_features is not None
             else df_total[df_pathomics.columns]
+        )
     if df_RNA is not None:
-        datasets['RNA'] = df_total[rna_features] if rna_features is not None else df_total[df_RNA.columns]
+        datasets["RNA"] = (
+            df_total[rna_features]
+            if rna_features is not None
+            else df_total[df_RNA.columns]
+        )
 
     # 4. Return each dataset and the target in the right order
     output = tuple()
     for modality in order:
-        assert datasets[modality] is not None, "order specifies a modality but the input file for loading the raw " \
-                                               "data is not given "
+        assert datasets[modality] is not None, (
+            "order specifies a modality but the input file for loading the raw "
+            "data is not given "
+        )
         output = output + (datasets[modality],)
 
     return output + (target, target_survival)
