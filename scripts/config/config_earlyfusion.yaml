@@ -1,0 +1,58 @@
+save_name: "xgboost_thresholds_select_bis_100cv_PFS_1210"
+target: "PFS"
+
+clinical_data:
+  clinical_file: "../data/new_new_clinicals.csv"
+  imputation:
+    numericals: [1, 3, 4, 13, 14, 15, 16, 17, 18, 19, -4]
+    categoricals: [20, -5, -3]
+
+radiomics_data:
+  radiomics_file: "../data/radiomics_absthr_bis.csv"
+  preprocessing:
+    f_log_transform: ['TMTV', 'T_TMTV', 'N1_TMTV', 'N2_TMTV', 'N3_TMTV', 'M1a_TMTV', 'M1bc_TMTV']
+  imputation:
+    numericals: [2]
+    categoricals: null
+
+pathomics_data:
+  pathomics_file: "../data/pathomics.csv"
+  imputation:
+    numericals: [ 27, 28, 29, 31, 33, 35, 38, 40, 41, 43, 44, 45, 47, 48, 49, 52, 53, 54, 55, 56, 57, 58, 59, 60,
+                  61, 62, 63, 64, 65, 66, 67, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
+                  131, 132, 133 ]
+    categoricals: null
+
+rna_data:
+  rna_file: "../data/omics_mcp_tmb_new.csv"
+  imputation:
+    numericals: [32]
+    categoricals: null
+
+classifier:
+  type: "xgboost" # "LR"
+  args:
+    n_jobs: 1
+#  args:
+#    penalty: "elasticnet"
+#    max_iter: 2500
+#    solver: "saga"
+#    class_weight: "balanced"
+#    C: 0.1
+#    l1_ratio: 0.5
+
+
+earlyfusion:
+  n_repeats: 100
+  seed: 3
+  classifier_args:
+    calibration: True #True
+    balance_features: False #True
+    select_features: True
+    threshold_select: null
+    max_features: 40
+    max_corr: 0.7
+    n_jobs: 1
+
+parallelization:
+  n_jobs_repeats: 45
