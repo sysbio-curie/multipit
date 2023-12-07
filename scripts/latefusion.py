@@ -56,7 +56,7 @@ def main(params):
     np.random.seed(seed)
 
     # 2. Load data
-    *list_data, labels, gene_names, target_surv = load_TIPIT_multimoda(
+    *list_data, labels, target_surv = load_TIPIT_multimoda(
         clinical_file=config["clinical_data"]["clinical_file"],
         radiomics_file=config["radiomics_data"]["radiomics_file"],
         pathomics_file=config["pathomics_data"]["pathomics_file"],
@@ -65,6 +65,7 @@ def main(params):
         outcome=config["target"],
         return_survival=config["target"],
     )
+
     list_data[-1] = encode_biopsy_site(list_data[-1])
     list_data[1] = process_radiomics(
         list_data[1], config["radiomics_data"]["preprocessing"]["f_log_transform"]
@@ -175,7 +176,7 @@ def main(params):
             n_splits=10, shuffle=True
         )  # , random_state=np.random.seed(i))
         X_preds = np.zeros((len(y), 3 + len(names)))
-        X_thresholds = np.zeros((len(y), 2 + len(names)))
+        X_thresholds = np.zeros((len(y), 2 + len(names))) if config["collect_thresholds"] else None
 
         late_clf = LateFusionClassifier(
             estimators=[pipe_clinical, pipe_radiomics, pipe_pathomics, pipe_rna],
@@ -205,15 +206,19 @@ def main(params):
             for c, idx in enumerate(indices):
                 X_preds[test_index, c] = clf.predict_proba(X_test, estim_ind=idx)[:, 1]
                 # Collect the threshold that optimizes log-rank test on the training set
-                X_thresholds[test_index, c] = clf.find_logrank_threshold(
-                    X_train, target_surv_train, estim_ind=idx
-                )
+                if config["collect_thresholds"]:
+                    X_thresholds[test_index, c] = clf.find_logrank_threshold(
+                        X_train, target_surv_train, estim_ind=idx
+                    )
             X_preds[test_index, -3] = fold_index
-            X_thresholds[test_index, -2] = fold_index
+            if config["collect_thresholds"]:
+                X_thresholds[test_index, -2] = fold_index
 
         X_preds[:, -2] = r
-        X_thresholds[:, -1] = r
+        if config["collect_thresholds"]:
+            X_thresholds[:, -1] = r
         X_preds[:, -1] = y
+
         df_pred = (
             pd.DataFrame(
                 X_preds,
@@ -225,16 +230,19 @@ def main(params):
             .set_index(["repeat", "samples"])
         )
 
-        df_thrs = (
-            pd.DataFrame(
-                X_thresholds,
-                columns=names + ["fold_index", "repeat"],
-                index=data_concat.index,
+        if config["collect_thresholds"]:
+            df_thrs = (
+                pd.DataFrame(
+                    X_thresholds,
+                    columns=names + ["fold_index", "repeat"],
+                    index=data_concat.index,
+                )
+                .reset_index()
+                .rename(columns={"index": "samples"})
+                .set_index(["repeat", "samples"])
             )
-            .reset_index()
-            .rename(columns={"index": "samples"})
-            .set_index(["repeat", "samples"])
-        )
+        else:
+            df_thrs = None
 
         # 2. Perform permutation test
         permut_predictions = None
@@ -306,8 +314,9 @@ def main(params):
         np.save(os.path.join(save_dir, "permutation_predictions.npy"), perm_predictions)
         data_preds = pd.concat(list_data_preds, axis=0)
         data_preds.to_csv(os.path.join(save_dir, "predictions.csv"))
-        data_thrs = pd.concat(list_data_thrs, axis=0)
-        data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
+        if config["collect_thresholds"]:
+            data_thrs = pd.concat(list_data_thrs, axis=0)
+            data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
     else:
         list_data_preds, list_data_thrs = [], []
         for p, res in enumerate(results_parallel):
@@ -315,8 +324,9 @@ def main(params):
             list_data_thrs.append(res[1])
         data_preds = pd.concat(list_data_preds, axis=0)
         data_preds.to_csv(os.path.join(save_dir, "predictions.csv"))
-        data_thrs = pd.concat(list_data_thrs, axis=0)
-        data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
+        if config["collect_thresholds"]:
+            data_thrs = pd.concat(list_data_thrs, axis=0)
+            data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
 
 
 if __name__ == "__main__":

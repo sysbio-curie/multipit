@@ -49,7 +49,7 @@ def main(params):
     np.random.seed(seed)
 
     # 2. Load data
-    *list_data, labels, gene_names, target_surv = load_TIPIT_multimoda(
+    *list_data, labels, target_surv = load_TIPIT_multimoda(
         clinical_file=config["clinical_data"]["clinical_file"],
         radiomics_file=config["radiomics_data"]["radiomics_file"],
         pathomics_file=config["pathomics_data"]["pathomics_file"],
@@ -153,7 +153,7 @@ def main(params):
             n_splits=10, shuffle=True
         )  # , random_state=np.random.seed(i))
         X_preds = np.zeros((len(y), 3 + len(names)))
-        X_thresholds = np.zeros((len(y), 2 + len(names)))
+        X_thresholds = np.zeros((len(y), 2 + len(names))) if config["collect_thresholds"] else None
 
         for fold_index, (train_index, test_index) in tqdm(
             enumerate(cv.split(np.zeros(len(y)), y)),
@@ -187,15 +187,18 @@ def main(params):
 
                 early_clf.fit(X_train, y_train)
                 X_preds[test_index, c] = early_clf.predict_proba(X_test)[:, 1]
-                X_thresholds[test_index, c] = early_clf.find_logrank_threshold(
-                    X_train, target_surv_train
-                )
+                if config["collect_thresholds"]:
+                    X_thresholds[test_index, c] = early_clf.find_logrank_threshold(
+                        X_train, target_surv_train
+                    )
 
             X_preds[test_index, -3] = fold_index
-            X_thresholds[test_index, -2] = fold_index
+            if config["collect_thresholds"]:
+                X_thresholds[test_index, -2] = fold_index
 
         X_preds[:, -2] = r
-        X_thresholds[:, -1] = r
+        if config["collect_thresholds"]:
+            X_thresholds[:, -1] = r
         X_preds[:, -1] = y
         df_pred = (
             pd.DataFrame(
@@ -207,17 +210,19 @@ def main(params):
             .rename(columns={"index": "samples"})
             .set_index(["repeat", "samples"])
         )
-
-        df_thrs = (
-            pd.DataFrame(
-                X_thresholds,
-                columns=names + ["fold_index", "repeat"],
-                index=data_concat.index,
+        if config["collect_thresholds"]:
+            df_thrs = (
+                pd.DataFrame(
+                    X_thresholds,
+                    columns=names + ["fold_index", "repeat"],
+                    index=data_concat.index,
+                )
+                .reset_index()
+                .rename(columns={"index": "samples"})
+                .set_index(["repeat", "samples"])
             )
-            .reset_index()
-            .rename(columns={"index": "samples"})
-            .set_index(["repeat", "samples"])
-        )
+        else:
+            df_thrs = None
 
         return df_pred, df_thrs
 
@@ -242,8 +247,9 @@ def main(params):
         list_data_thrs.append(res[1])
     data_preds = pd.concat(list_data_preds, axis=0)
     data_preds.to_csv(os.path.join(save_dir, "predictions.csv"))
-    data_thrs = pd.concat(list_data_thrs, axis=0)
-    data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
+    if config["collect_thresholds"]:
+        data_thrs = pd.concat(list_data_thrs, axis=0)
+        data_thrs.to_csv(os.path.join(save_dir, "thresholds.csv"))
 
 
 if __name__ == "__main__":
