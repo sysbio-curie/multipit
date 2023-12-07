@@ -1,14 +1,16 @@
-save_name: "LR_thresholds_100cv_PFS_1210"
+save_name: "test_LR_PFS_0712"
 target: "PFS"
 
+
+#### Data paths + pre-processing for each modality (e.g. simple imputation)
 clinical_data:
-  clinical_file: "../data/new_new_clinicals.csv"
+  clinical_file: "data/clinicals.csv"
   imputation:
     numericals: [1, 3, 4, 13, 14, 15, 16, 17, 18, 19, -4]
     categoricals: [20, -5, -3]
 
 radiomics_data:
-  radiomics_file: "../data/radiomics_absthr_bis.csv"
+  radiomics_file: "data/radiomics.csv"
   preprocessing:
     f_log_transform: ['TMTV', 'T_TMTV', 'N1_TMTV', 'N2_TMTV', 'N3_TMTV', 'M1a_TMTV', 'M1bc_TMTV']
   imputation:
@@ -16,7 +18,7 @@ radiomics_data:
     categoricals: null
 
 pathomics_data:
-  pathomics_file: "../data/pathomics.csv"
+  pathomics_file: "data/pathomics.csv"
   imputation:
     numericals: [ 27, 28, 29, 31, 33, 35, 38, 40, 41, 43, 44, 45, 47, 48, 49, 52, 53, 54, 55, 56, 57, 58, 59, 60,
                   61, 62, 63, 64, 65, 66, 67, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
@@ -24,15 +26,15 @@ pathomics_data:
     categoricals: null
 
 rna_data:
-  rna_file: "../data/omics_mcp_tmb_new.csv"
+  rna_file: "data/omics.csv"
   imputation:
     numericals: [32]
     categoricals: null
 
+
+####  Define classifier + hyperparameters
 classifier:
-  type: "LR" #"xgboost"
-#  args:
-#    n_jobs: 1
+  type: "LR"
   args:
     penalty: "elasticnet"
     max_iter: 2500
@@ -40,31 +42,39 @@ classifier:
     class_weight: "balanced"
     C: 0.1
     l1_ratio: 0.5
+#   type: "xgboost"
+#   args:
+#     n_jobs: 1
 
-  optim_params:
-#    xgboost__max_depth: [3, 6, 9, 12]
-#    xgboost__learning_rate: [0.001, 0.01, 0.05, 0.1, 0.2, 0.3]
-#    xgboost__subsample: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-#    xgboost__colsample_bytree: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
-#    xgboost__n_estimators: [100, 200, 300, 400, 500]
+  optim_params: # Uncomment and modify for parameter optimization
+#     LR__l1_ratio: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+#     LR__C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
+#
+#     xgboost__max_depth: [3, 6, 9, 12]
+#     xgboost__learning_rate: [0.001, 0.01, 0.05, 0.1, 0.2, 0.3]
+#     xgboost__subsample: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+#     xgboost__colsample_bytree: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+#     xgboost__n_estimators: [100, 200, 300, 400, 500]
+#  n_iter_randomcv: 80 # number of iterations/samples for randomsearch
 
-#    LR__l1_ratio: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-#    LR__C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
-#  n_iter_randomcv: 80
 
+#### Define latefusion parameters  (see multipit.multi_model.latefusion)
 latefusion:
-  n_repeats: 100
-  seed: 3
+  n_repeats: 1 # number of repeats for 10-fold cross-validation
+  seed: 3 # random seed
   classifier_args:
-    sup_weights: False #True
-    calibration: null #"late"
+    sup_weights: False # learn weights with inner cross-validation for weighted late fusion
+    calibration: null # if 'late' calibrate the fused model, if 'early' calibrate each unimodal model before fusion
     n_jobs: 1
-    fixed_threshold: 0.5
-#    tuning: "gridsearch" #"randomsearch"
-#    score: "roc_auc" #"balanced_neg_log_loss"
+    # tuning: "gridsearch" # uncomment for parameter optimization
+    # score: "roc_auc" # uncomment for parameter optimization
 
-parallelization:
-  n_jobs_repeats: 10
 
-permutation_test: False #True
+##### Additionnal parameters
+parallelization: # number of jobs for dealing with several repeats in parallel (conflict with n_jobs of latefusion)
+  n_jobs_repeats: 1
+
+collect_thresholds: False  # collect threshold that optimizes log-rank test on the training set
+
+permutation_test: False # perform permutation test
 n_permutations: 100

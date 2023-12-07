@@ -1,14 +1,16 @@
-save_name: "Cox_thresholds_select_bis_100cv_PFS_1210"
+save_name: "test_Cox_PFS_0712"
 target: "PFS"
 
+
+#### Data paths + pre-processing for each modality (e.g. simple imputation)
 clinical_data:
-  clinical_file: "../data/new_new_clinicals.csv"
+  clinical_file: "data/clinicals.csv"
   imputation:
     numericals: [1, 3, 4, 13, 14, 15, 16, 17, 18, 19, -4]
     categoricals: [20, -5, -3]
 
 radiomics_data:
-  radiomics_file: "../data/radiomics_absthr_bis.csv"
+  radiomics_file: "data/radiomics.csv"
   preprocessing:
     f_log_transform: ['TMTV', 'T_TMTV', 'N1_TMTV', 'N2_TMTV', 'N3_TMTV', 'M1a_TMTV', 'M1bc_TMTV']
   imputation:
@@ -16,7 +18,7 @@ radiomics_data:
     categoricals: null
 
 pathomics_data:
-  pathomics_file: "../data/pathomics.csv"
+  pathomics_file: "data/pathomics.csv"
   imputation:
     numericals: [27, 28, 29, 31, 33, 35, 38, 40, 41, 43, 44, 45, 47, 48, 49, 52, 53, 54, 55, 56, 57, 58, 59, 60,
                   61, 62, 63, 64, 65, 66, 67, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130,
@@ -24,33 +26,42 @@ pathomics_data:
     categoricals: null
 
 rna_data:
-  rna_file: "../data/omics_mcp_tmb_new.csv"
+  rna_file: "data/omics.csv"
   imputation:
     numericals: [32]
     categoricals: null
 
+
+####  Define survival model + hyperparameters
 survival_model:
-  type: "Cox" #"RF"
-#  args:
-#    max_features: "sqrt"
-#    max_depth: 6
+  type: "Cox"
   args:
     n_alphas: 100
     alpha_min_ratio: 0.01
     l1_ratio: 0.5
+#  type: "RF"
+#  args:
+#    max_features: "sqrt"
+#    max_depth: 6
 
 
+#### Define earlyfusion parameters (see multipit.multi_model.earlyfusion)
 earlyfusion:
-  n_repeats: 100
+  n_repeats: 1
   seed: 3
   args:
-    calibration: True
-    balance_features: False #True
-    select_features: True #True
-    threshold_select: null
-    max_features: 40
-    max_corr: 0.7
+    calibration: True # if True the fused model is calibrated with inner cross-validation
+    balance_features: False # only availbale for classifier with 'feature_weight' parameter
+    select_features: True # if True univariate feature selection is used as a pre-processing step
+    threshold_select: null # minimum performance value for feature selection
+    max_features: 40 # maximum number of features to select
+    max_corr: 0.7 # maximum correlation threshold for feature selection
     n_jobs: 1
 
-parallelization:
-  n_jobs_repeats: 45
+
+##### Additionnal parameters
+parallelization: # number of jobs for dealing with several repeats in parallel (conflict with n_jobs of latefusion)
+  n_jobs_repeats: 1
+
+collect_thresholds: False # collect threshold that optimizes log-rank test on the training set
+
