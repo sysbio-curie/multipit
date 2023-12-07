@@ -81,19 +81,19 @@ def load_TIPIT_multimoda(
     """
     # 1. Load raw data and concatenate them
     assert clinical_file is not None, "clinical data should always be provided"
-    df_clinicals = pd.read_csv(clinical_file, index_col=0, sep=";")
+    df_clinicals = pd.read_csv(clinical_file, index_col=0, sep=None, engine="python")
     df_radiomics = (
-        pd.read_csv(radiomics_file, index_col=0, sep=";")
+        pd.read_csv(radiomics_file, index_col=0, sep=None, engine="python")
         if radiomics_file is not None
         else None
     )
     df_pathomics = (
-        pd.read_csv(pathomics_file, index_col=0, sep=";")
+        pd.read_csv(pathomics_file, index_col=0, sep=None, engine="python")
         if pathomics_file is not None
         else None
     )
     df_RNA = (
-        pd.read_csv(rna_file, index_col=0, sep=";") if rna_file is not None else None
+        pd.read_csv(rna_file, index_col=0, sep=None, engine="python") if rna_file is not None else None
     )
 
     list_data = [
