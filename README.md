@@ -46,3 +46,7 @@ python latefusion.py -c config/config_latefusion.yaml -s path/to/results/folder
 ```
 
 **Warning:** For Windows OS paths must be written with '\' or '\\' separators (instead of '\').
+
+## Acknowledgements
+
+This repository was created as pat of the PhD project of Nicolas Captier in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
