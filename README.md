@@ -49,4 +49,4 @@ python latefusion.py -c config/config_latefusion.yaml -s path/to/results/folder
 
 ## Acknowledgements
 
-This repository was created as pat of the PhD project of Nicolas Captier in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
+This repository was created as part of the PhD project of Nicolas Captier in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
