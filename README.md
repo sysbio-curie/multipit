@@ -1,5 +1,8 @@
 # multipit
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 This repository provides a set of Python tools to perform multimodal learning with tabular data. It contains the code used in our study: 
 
 "Integration of clinical, pathological, radiological, and transcriptomic data to predict first-line immunotherapy outcome in metastatic non-small cell lung cancer"
