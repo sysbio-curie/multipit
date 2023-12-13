@@ -13,6 +13,7 @@ This repository provides a set of Python tools to perform multimodal learning wi
 - scikit-learn (>= 1.2.0)
 - scikit-survival (>= 0.21.0)
 - seaborn (=0.13.0)
+- shap (>= 0.41.0)
 - xgboost (>= 1.7.5)
 ### Install from source
 Clone the repository:
@@ -26,12 +27,13 @@ git clone https://github.com/ncaptier/multipit.git
   * [`multipit.multi_model.EarlyFusionSurvival`](multipit/multi_model/earlyfusion.py) and [`multipit.multi_model.LateFusionSurvival`](multipit/multi_model/latefusion.py) for survival prediction.
    
 
-* **Scripts to reproduce the experiments of our study**: scripts to perform late fusion an early fusion of clinical, radiomic, pathomic and transcriptomic features with a repeated cross-validation scheme (see [scripts](scripts) folder).   
+* **Scripts to reproduce the experiments of our study**: Scripts to perform late fusion an early fusion of clinical, radiomic, pathomic and transcriptomic features with a repeated cross-validation scheme. Scripts to compute and collect the SHAP values associated with each unimodal predictive model (see [scripts](scripts) folder).
    
 
-* **Plotting functions and notebooks to reproduce the figures of our study**: several functions to plot and compare the performances of differenent multimodal combinations.
+* **Plotting functions and notebooks to reproduce the figures of our study**: several functions to plot and compare the performances of different multimodal combinations as well as to display feature importance with SHAP values.
   * [plot_results.ipynb](notebooks/plot_results.ipynb) 
   * [benchmark.ipynb](notebooks/benchmark.ipynb)
+  * [plot_shap.ipynb](notebooks/plot_shap.ipynb)
 
 ## Deep-multipit
 
@@ -45,7 +47,13 @@ Modify the configurations in `.yaml` config files (in config/ subfolder) then ru
 python latefusion.py -c config/config_latefusion.yaml -s path/to/results/folder
 ```
 
+````
+python collect_shap_survival.py -c config/config_latefusion_survival.yaml -s path/to/results/folder
+````
+
 **Warning:** For Windows OS paths must be written with '\' or '\\' separators (instead of '\').
+
+**Note:** In order to modify more deeply the loading of the data or the predictive pipelines, please update the `PredictionTask` class in the file [_init_scripts.py](scripts/_init_scripts.py). 
 
 ## Acknowledgements
 
