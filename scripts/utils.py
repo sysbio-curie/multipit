@@ -1,8 +1,8 @@
-import yaml
 import numpy as np
 import pandas as pd
-from tqdm.auto import tqdm
+import yaml
 from joblib import Parallel
+from tqdm.auto import tqdm
 
 
 def encode_biopsy_site(df_rna):
