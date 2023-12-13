@@ -54,7 +54,7 @@ python latefusion.py -c config/config_latefusion.yaml -s path/to/results/folder
 python collect_shap_survival.py -c config/config_latefusion_survival.yaml -s path/to/results/folder
 ````
 
-**Warning:** For Windows OS paths must be written with '\' or '\\' separators (instead of '\').
+**Warning:** For Windows OS paths must be written with '\\' or '\\\' separators (instead of '/').
 
 **Note:** In order to modify more deeply the loading of the data or the predictive pipelines, please update the `PredictionTask` class in the file [_init_scripts.py](scripts/_init_scripts.py). 
 
