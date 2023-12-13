@@ -1,4 +1,4 @@
-save_name: "test_Cox_PFS_0712"
+save_name: "RF_PFS"
 target: "PFS"
 
 
@@ -25,8 +25,8 @@ pathomics_data:
                   131, 132, 133 ]
     categoricals: null
 
-rna_data:
-  rna_file: "data/omics.csv"
+RNA_data:
+  RNA_file: "data/omics.csv"
   imputation:
     numericals: [32]
     categoricals: null
@@ -34,15 +34,15 @@ rna_data:
 
 ####  Define survival model + hyperparameters
 survival_model:
-  type: "Cox"
-  args:
-    n_alphas: 100
-    alpha_min_ratio: 0.01
-    l1_ratio: 0.5
-#  type: "RF"
+#  type: "Cox"
 #  args:
-#    max_features: "sqrt"
-#    max_depth: 6
+#    n_alphas: 100
+#    alpha_min_ratio: 0.01
+#    l1_ratio: 0.5
+  type: "RF"
+  args:
+    max_features: "sqrt"
+    max_depth: 6
 
   optim_params: # Uncomment and modify for parameter optimization
 #  n_iter_randomcv: 80 # number of iterations/samples for randomsearch
@@ -50,7 +50,7 @@ survival_model:
 
 #### Define latefusion parameters (see multipit.multi_model.latefusion)
 latefusion:
-  n_repeats: 1  # number of repeats for 10-fold cross-validation
+  n_repeats: 100  # number of repeats for 10-fold cross-validation
   seed: 3 # random seed
   args:
     sup_weights: False # learn weights with inner cross-validation for weighted late fusion
@@ -64,7 +64,7 @@ latefusion:
 parallelization:  # number of jobs for dealing with several repeats in parallel (conflict with n_jobs of latefusion)
   n_jobs_repeats: 1
 
-collect_thresholds: True # collect threshold that optimizes log-rank test on the training set
+collect_thresholds: False # collect threshold that optimizes log-rank test on the training set
 
 permutation_test: False # perform permutation test
-n_permutations: 100
+n_permutations: 1
