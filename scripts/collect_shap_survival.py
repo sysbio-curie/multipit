@@ -12,8 +12,8 @@ from sklearn.base import clone
 from sksurv.util import Surv
 from tqdm import tqdm
 
-from init_scripts import PredictionTask
-from utils import read_yaml, write_yaml, ProgressParallel
+from _init_scripts import PredictionTask
+from _utils import read_yaml, write_yaml, ProgressParallel
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)

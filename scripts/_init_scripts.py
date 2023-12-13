@@ -14,7 +14,7 @@ from sksurv.ensemble import RandomSurvivalForest
 from sksurv.linear_model import CoxnetSurvivalAnalysis
 from sksurv.metrics import as_concordance_index_ipcw_scorer
 
-from utils import encode_biopsy_site, process_radiomics
+from _utils import encode_biopsy_site, process_radiomics
 
 currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 parentdir = os.path.dirname(currentdir)
