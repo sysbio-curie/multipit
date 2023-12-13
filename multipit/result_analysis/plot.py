@@ -302,7 +302,7 @@ def plot_survival(
     return fig
 
 
-def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
+def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10), title=None):
     """
     Generate a SHAP values plot for visualizing feature importance.
 
@@ -320,6 +320,9 @@ def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
     figsize : tuple, optional
         Size of the figure (width, height). Default is (9, 10).
 
+    title : str, None, optional
+        Plot title. Default is None
+
     Returns
     -------
     fig : matplotlib.figure.Figure
@@ -330,15 +333,10 @@ def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
         lambda col: pd.qcut(col.rank(method="first"), q=20, labels=False), axis=0
     )
 
-    # mask_reduced = np.any(shap_values != 0, axis=1)
-    # shap_values_reduced = shap_values[mask_reduced]
-    # print(shap_values_reduced.shape)
-    # quantiles_reduced = data_quantiles[mask_reduced]
-
-    best_features = (
+    best_features = list(
         np.abs(shap_values).mean(axis=0).sort_values(ascending=False).index[:n_best]
     )
-
+    best_features.reverse()
     temp = shap_values[best_features].melt()
     temp["quantiles"] = data_quantiles[best_features].melt()["value"]
 
@@ -358,9 +356,12 @@ def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
     ax.vlines(0, -1, n_best, colors="gray")
     ax.set_ylim(-1, n_best)
     ax.set_axisbelow(True)
+    ax.tick_params(axis='y', labelsize=12)
     ax.yaxis.grid(color="gray", linestyle="dashed")
     ax.legend().set_visible(False)
     ax.set(xlabel=None, ylabel=None)
+    if title is not None:
+        ax.set_title(title, fontsize=14)
     sns.despine(left=True)
     cb = fig.colorbar(
         cm.ScalarMappable(cmap="bwr"), ticks=[0, 1], aspect=80, ax=ax, shrink=0.9
@@ -370,7 +371,6 @@ def plot_shap_values(data, shap_values, n_best=10, figsize=(9, 10)):
     cb.ax.tick_params(labelsize=11, length=0)
     cb.set_alpha(1)
     cb.outline.set_visible(False)
-    ax.set_xlim(-0.125, 0.125)
     plt.tight_layout()
     plt.show()
     return fig
