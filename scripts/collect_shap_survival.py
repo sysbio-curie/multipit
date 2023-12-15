@@ -113,9 +113,15 @@ def _fun_parallel(prediction_task, X, y, r, disable_infos):
 
     Returns
     -------
-    shap_dict:
+    shap_dict: dictionary
+        Dictionary whose keys correspond to the different modalities (e.g., "RNA", "clinical") and the items correspond
+        to pandas dataframe of size (n_samples, n_features) that contain the SHAP values collected across the test sets
+        of the cross-validation scheme.
 
-    coefs_dict:
+    coefs_dict: dictionary or None
+        Dictionary whose keys correspond to the different modalities (e.g., "RNA", "clinical") and the items correspond
+        to arrays of size (n_folds, n_features) that contain the linear coefficients collected across the different
+        folds of the cross-validation scheme. None if the survival model type is not linear.
     """
 
     cv = CensoredKFold(n_splits=10, shuffle=True)

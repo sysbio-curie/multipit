@@ -28,6 +28,7 @@ from multipit.utils.custom.classifier import CustomXGBoostClassifier
 
 class PredictionTask:
     """
+    Load data and define associated predictive pipelines.
 
     Parameters
     ----------
