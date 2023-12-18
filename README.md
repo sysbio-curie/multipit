@@ -13,6 +13,7 @@ This repository provides a set of Python tools to perform multimodal learning wi
 - matplotlib (>= 3.5.1)
 - numpy (>= 1.21.5)
 - pandas (= 1.5.3)
+- pyyaml (>= 6.0)
 - scikit-learn (>= 1.2.0)
 - scikit-survival (>= 0.21.0)
 - seaborn (=0.13.0)
