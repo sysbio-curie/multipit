@@ -1,0 +1,61 @@
+save_name: "tcga_1y_death_latefusion"
+
+#### Data paths + pre-processing for each modality (e.g. simple imputation)
+clinical_data:
+  clinical_file: "..\\..\\data\\tcga_lung_clinical.csv"
+  imputation:
+    numericals: [2, 4, 5]
+    categoricals:
+
+RNA_data:
+  RNA_file: "..\\..\\data\\tcga_lung_rna.csv"
+  imputation:
+    numericals:
+    categoricals:
+
+####  Define classifier + hyperparameters
+classifier:
+#  type: "LR"
+#  args:
+#    penalty: "elasticnet"
+#    max_iter: 2500
+#    solver: "saga"
+#    class_weight: "balanced"
+#    C: 0.1
+#    l1_ratio: 0.5
+  type: "xgboost"
+  args:
+    n_jobs: 1
+
+  optim_params: # Uncomment and modify for parameter optimization
+#     LR__l1_ratio: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+#     LR__C: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 5, 10]
+#
+#     xgboost__max_depth: [3, 6, 9, 12]
+#     xgboost__learning_rate: [0.001, 0.01, 0.05, 0.1, 0.2, 0.3]
+#     xgboost__subsample: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+#     xgboost__colsample_bytree: [0.5, 0.6, 0.7, 0.8, 0.9, 1.]
+#     xgboost__n_estimators: [100, 200, 300, 400, 500]
+#  n_iter_randomcv: 80 # number of iterations/samples for randomsearch
+
+
+#### Define latefusion parameters  (see multipit.multi_model.latefusion)
+latefusion:
+  n_repeats: 1 # number of repeats for 10-fold cross-validation
+  seed: 3 # random seed
+  args:
+    sup_weights: False # learn weights with inner cross-validation for weighted late fusion
+    calibration: 'late' # if 'late' calibrate the fused model, if 'early' calibrate each unimodal model before fusion
+    n_jobs: 1
+    # tuning: "gridsearch" # uncomment for parameter optimization
+    # score: "roc_auc" # uncomment for parameter optimization
+
+
+##### Additionnal parameters
+parallelization: # number of jobs for dealing with several repeats in parallel (conflict with n_jobs of latefusion)
+  n_jobs_repeats: 1
+
+collect_thresholds: False  # collect threshold that optimizes log-rank test on the training set
+
+permutation_test: False # perform permutation test
+n_permutations: 1
