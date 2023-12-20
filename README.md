@@ -59,6 +59,12 @@ python collect_shap_survival.py -c config/config_latefusion_survival.yaml -s pat
 
 **Note:** In order to modify more deeply the loading of the data or the predictive pipelines, please update the `PredictionTask` class in the file [_init_scripts.py](scripts/_init_scripts.py). 
 
+## Examples
+In the [examples](examples) folder we provide a brief example on how to slightly modify the scripts and codes from our original experiments to perform multimodal learning for the prediction of Overall Survival from clinical and RNA-seq data extracted from TCGA (i.e., stage III and IV TCGA-LUAD and TCGA-LUSC samples).   
+
+We simply updated the `PredictionTask` class in a new file [_init_scripts_tcga.py](examples/tcga_lung/_init_scripts_tcga.py) to load TGCA data and build predictive pipelines.
+
+**Note:** clinical and transcriptomic data extracted for 201 stage III/IV TCGA patients (i.e., LUAD or LUSC) are available in the [data](data) folder.
 ## Acknowledgements
 
 This repository was created as part of the PhD project of Nicolas Captier in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
