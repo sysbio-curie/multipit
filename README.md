@@ -5,7 +5,7 @@
 
 This repository provides a set of Python tools to perform multimodal learning with tabular data. It contains the code used in our study: 
 
-"Integration of clinical, pathological, radiological, and transcriptomic data to predict first-line immunotherapy outcome in metastatic non-small cell lung cancer"
+"Integration of clinical, pathological, radiological, and transcriptomic data improves the prediction of first-line immunotherapy outcome in metastatic non-small cell lung cancer"
 
 ## Installation
 ### Dependencies
