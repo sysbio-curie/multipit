@@ -7,6 +7,8 @@ This repository provides a set of Python tools to perform multimodal learning wi
 
 "Integration of clinical, pathological, radiological, and transcriptomic data improves the prediction of first-line immunotherapy outcome in metastatic non-small cell lung cancer"
 
+**Preprint:** https://doi.org/10.1101/2024.06.27.24309583
+
 ## Installation
 ### Dependencies
 - lifelines (>= 0.27.4)
