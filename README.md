@@ -24,7 +24,7 @@ This repository provides a set of Python tools to perform multimodal learning wi
 ### Install from source
 Clone the repository:
 ```
-git clone https://github.com/ncaptier/multipit.git 
+git clone https://github.com/sysbio-curie/multipit
 ```
 
 ## Key features
