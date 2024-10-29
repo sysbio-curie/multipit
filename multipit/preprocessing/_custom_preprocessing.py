@@ -80,7 +80,6 @@ class CustomImputer(_BaseImputer):
         -------
         X_imputed: 2D array of shape (n_samples, n_features)
             X with imputed values
-
         """
         X_imputed = np.copy(X)
         if self.categoricals is not None:
@@ -150,9 +149,10 @@ class CustomSelection(BaseEstimator, TransformerMixin):
 
         modalities: 1D array of shape (n_features).
             This parameter deals with scenarios where features from different modalities are concatenated. It comprises
-            labels indicating the membership of each feature to a specific modality. If `max_number` is not None, and
-            the remaining features outnumber `max_number`, the algorithm selects the top `max_number/n_modalities`
-            performing features within each modality. If None the different modalities are ignored. The default is None.
+            integer labels indicating the membership of each feature to a specific modality. If `max_number` is not
+            None, and the remaining features outnumber `max_number`, the algorithm selects the top
+            `max_number/n_modalities` performing features within each modality. If None the different modalities are
+            ignored. The default is None.
 
         Returns
         -------
@@ -219,12 +219,15 @@ class CustomSelection(BaseEstimator, TransformerMixin):
 
     def transform(self, X):
         """
+        Select features
+
         Parameters
         ----------
-        X:
+        X: 2D array of shape (n_samples, n_features)
 
         Returns
         -------
+            2D array of shape (n_samples, n_selected_features)
         """
         return X[:, self.features_]
 
@@ -242,12 +245,10 @@ class CustomScaler(BaseEstimator, TransformerMixin):
     strategy: {'standardize', 'robust', 'minmax'}
         The strategy used for scaling. The default is 'standardize'.
 
-
     Attributes
     ----------
     scaler_: object
         Fitted scaler based on the specified strategy.
-
     """
 
     def __init__(self, features=None, strategy="standardize"):
