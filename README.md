@@ -43,7 +43,7 @@ git clone https://github.com/sysbio-curie/multipit
 
 ## Deep-multipit
 
-We also provide another Github repository, named [deep-multipit](https://github.com/sysbio-curie/deep-multipit) with a Pytorch implementation of an end-to-end integration strategy with attention weights, inspired by [Vangurie *et al*, 2022](https://www.nature.com/articles/s43018-022-00416-8).
+We also provide another Github repository, named [deep-multipit](https://github.com/sysbio-curie/deep-multipit) with a Pytorch implementation of an end-to-end integration strategy with attention weights, inspired by [Vanguri *et al*, 2022](https://www.nature.com/articles/s43018-022-00416-8).
 
 ## Run scripts
 
