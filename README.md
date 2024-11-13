@@ -69,4 +69,4 @@ We simply updated the `PredictionTask` class in a new file [_init_scripts_tcga.p
 **Note:** clinical and transcriptomic data extracted for 201 stage III/IV TCGA patients (i.e., LUAD or LUSC) are available in the [data](data) folder.
 ## Acknowledgements
 
-This repository was created as part of the PhD project of Nicolas Captier in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
+This repository was created as part of the PhD project of [Nicolas Captier](https://ncaptier.github.io/) in the [Computational Systems Biologie of Cancer group](https://institut-curie.org/team/barillot) and the [ Laboratory of Translational Imaging in Oncology (LITO)](https://www.lito-web.fr/en/) of Institut Curie.
